@@ -1,0 +1,47 @@
+[Unit]
+Description=Void Shrine - Quantum Chaos Harvester
+Documentation=https://github.com/dissemblage/void-shrine
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=uprootiny
+Group=uprootiny
+WorkingDirectory=/var/www/void-shrine.dissemblage.art
+
+# Environment
+Environment=JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC"
+Environment=CLOJURE_OPTS="-J-server"
+Environment=PORT=3000
+
+# Command to run
+ExecStart=/usr/bin/clj -M -m void-shrine.web.minimal-server 3000
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Process management
+Restart=always
+RestartSec=5
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/void-shrine.dissemblage.art
+MemoryLimit=1G
+TasksMax=100
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=void-shrine
+
+# Health monitoring
+WatchdogSec=60
+NotifyAccess=main
+
+[Install]
+WantedBy=multi-user.target
