@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Void Shrine</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: monospace; 
+            background: #0a0a0a; 
+            color: #333; 
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shrine {
+            width: 80vmin;
+            height: 80vmin;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            position: relative;
+            animation: breathe 8s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .center-void {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #fff, 0 0 40px #fff;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 50%;
+            animation: rotate 20s linear infinite;
+        }
+        .orbit:nth-child(2) { width: 20%; height: 20%; top: 40%; left: 40%; animation-duration: 15s; }
+        .orbit:nth-child(3) { width: 40%; height: 40%; top: 30%; left: 30%; animation-duration: 25s; }
+        .orbit:nth-child(4) { width: 60%; height: 60%; top: 20%; left: 20%; animation-duration: 35s; }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .meditation-text {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            opacity: 0.3;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="shrine">
+        <div class="orbit"></div>
+        <div class="orbit"></div>
+        <div class="orbit"></div>
+        <div class="center-void"></div>
+    </div>
+    <div class="meditation-text">breathe • be • void</div>
+
+    <script>
+        // iOS Safari touch optimization
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // Prevent zoom on input focus
+            document.addEventListener('touchstart', function() {}, {passive: true});
+            
+            // Optimize touch interactions
+            document.addEventListener('touchmove', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            }, {passive: false});
+            
+            // Add touch device class
+            document.body.classList.add('ios-device');
+            
+            // Fix viewport on orientation change
+            window.addEventListener('orientationchange', function() {
+                setTimeout(function() {
+                    window.scrollTo(0, 1);
+                }, 100);
+            });
+        }
+        
+        console.log('📱 iOS compatibility enhancements loaded');
+    </script>
+</body>
+</html>
