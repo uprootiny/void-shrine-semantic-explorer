@@ -34,32 +34,40 @@
 
 ;;; Advanced pattern matching with Meander
 (defn chaos-pattern-match
-  "Pattern match and transform chaos data using Meander"
+  "Pattern match and transform chaos data using simple matching"
   [data]
-  (m/match data
-    ;; Entropy cascade pattern
-    {:entropy-values (m/scan {:entropy-value (m/pred #(> % 200))})}
+  (cond
+    ;; Check for high entropy values
+    (and (:entropy-values data)
+         (some #(> % 200) (:entropy-values data)))
     {:pattern :entropy-cascade 
      :intensity :high
      :recommendation :enter-void}
     
-    ;; Void convergence pattern  
-    {:void-manifestations (m/scan {:void-path [?realm ?domain & _]})}
-    {:pattern :void-convergence
-     :realm ?realm
-     :domain ?domain
-     :recommendation :harvest-more}
+    ;; Check for void manifestations
+    (and (:void-manifestations data)
+         (seq (:void-manifestations data)))
+    (let [first-manifestation (first (:void-manifestations data))
+          void-path (:void-path first-manifestation)]
+      {:pattern :void-convergence
+       :realm (first void-path)
+       :domain (second void-path)
+       :recommendation :harvest-more})
     
-    ;; Chaos equilibrium
-    {:chaos-metrics {:dissolution-rate (m/pred #(< 0.01 % 0.1))}}
+    ;; Check chaos metrics
+    (and (:chaos-metrics data)
+         (let [rate (get-in data [:chaos-metrics :dissolution-rate])]
+           (and rate (< 0.01 rate 0.1))))
     {:pattern :chaos-equilibrium
      :stability :moderate
      :recommendation :maintain-flow}
     
     ;; Default case
-    _
+    :else
     {:pattern :unknown
      :recommendation :observe}))
+
+(require '[clojure.core.async :as async :refer [go go-loop <! >! chan timeout]])
 
 ;;; Specter-based deep transformations
 (def entropy-lens
@@ -87,7 +95,7 @@
 (defn safe-entropy-computation
   "Safely compute entropy with Maybe monad"
   [entropy-values]
-  (maybe/maybe-map 
+  (cats/fmap 
    (fn [values]
      (when (seq values)
        {:mean (/ (reduce + values) (count values))
@@ -96,7 +104,7 @@
         :variance (let [mean (/ (reduce + values) (count values))]
                    (/ (reduce + (map #(* (- % mean) (- % mean)) values))
                       (count values)))}))
-   (when (seq entropy-values) entropy-values)))
+   (maybe/just (when (seq entropy-values) entropy-values))))
 
 (defn chaos-pipeline
   "Process chaos data through monadic pipeline"
@@ -174,18 +182,22 @@
        _
        state#)))
 
-(defchaos-mutation entropy-surge-mutation
-  {:entropy-values [& (m/scan ?val)] :as state}
-  (when (some #(> % 240) ?val)
-    (-> state
-        (update-in [:chaos-metrics :surge-count] (fnil inc 0))
-        (assoc :last-surge (System/currentTimeMillis)))))
+(defn entropy-surge-mutation [state]
+  (let [entropy-values (:entropy-values state)]
+    (if (some #(> % 240) entropy-values)
+      (-> state
+          (update-in [:chaos-metrics :surge-count] (fnil inc 0))
+          (assoc :last-surge (System/currentTimeMillis)))
+      state)))
 
-(defchaos-mutation void-deepening-mutation
-  {:void-manifestations (m/scan {:void-path (m/pred #(> (count %) 4))})}
-  (-> state
-      (update-in [:chaos-metrics :void-depth] (fnil inc 0))
-      (assoc :void-status :deepening)))
+(defn void-deepening-mutation [state]
+  (let [void-manifestations (:void-manifestations state)
+        deep-voids (filter #(> (count (:void-path %)) 4) void-manifestations)]
+    (if (seq deep-voids)
+      (-> state
+          (update-in [:chaos-metrics :void-depth] (fnil inc 0))
+          (assoc :void-status :deepening))
+      state)))
 
 ;;; Functional optics for nested state navigation  
 (defn make-lens

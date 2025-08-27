@@ -6,20 +6,20 @@
         ;; Server
         ring/ring-core {:mvn/version "1.10.0"}
         ring/ring-jetty-adapter {:mvn/version "1.10.0"}
-        compojure {:mvn/version "1.7.0"}
+        compojure/compojure {:mvn/version "1.7.0"}
         org.immutant/web {:mvn/version "2.1.10"}
         
         ;; Data processing & transformers
         org.clojure/core.async {:mvn/version "1.6.673"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         meander/epsilon {:mvn/version "0.0.650"}
-        specter {:mvn/version "1.1.4"}
+        com.rpl/specter {:mvn/version "1.1.4"}
         
         ;; HTTP client for entropy sources
-        clj-http {:mvn/version "3.12.3"}
+        clj-http/clj-http {:mvn/version "3.12.3"}
         
         ;; Hiccup for HTML generation
-        hiccup {:mvn/version "1.0.5"}
+        hiccup/hiccup {:mvn/version "1.0.5"}
         
         ;; Transit for data serialization
         com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -33,6 +33,11 @@
  {:dev {:extra-deps {nrepl/nrepl {:mvn/version "1.0.0"}
                       cider/cider-nrepl {:mvn/version "0.28.5"}}
         :main-opts ["-m" "nrepl.cmdline"]}
+  
+  :test {:extra-paths ["test"]
+         :extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
+         :main-opts ["-m" "void-shrine.test-runner"]
+         :exec-fn void-shrine.test-runner/run-all-tests}
   
   :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}}
           :ns-default build}

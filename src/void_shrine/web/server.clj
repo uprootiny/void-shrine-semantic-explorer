@@ -5,7 +5,7 @@
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.not-modified :refer [wrap-not-modified]]
             [ring.util.response :as response]
-            [clojure.core.async :as async :refer [go go-loop <! >! chan timeout]]
+            [clojure.core.async :as async :refer [go go-loop <! >! chan timeout pipe]]
             [clojure.data.json :as json]
             [void-shrine.entropy.harvester :as harvester]
             [void-shrine.chaos.ontology :as ontology]
@@ -134,7 +134,9 @@
                  "Cache-Control" "no-cache"
                  "Connection" "keep-alive"
                  "Access-Control-Allow-Origin" "*"}
-       :body (async/pipe event-chan (chan))}))
+       :body (let [out (chan)]
+               (pipe event-chan out)
+               out)}))
 
   ;; Chaos analytics endpoint with specter transformations
   (GET "/api/analytics" []

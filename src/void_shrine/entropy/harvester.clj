@@ -58,7 +58,8 @@
   (let [all-data (mapcat :data sources)
         mixed (reduce (fn [acc [idx val]]
                         (bit-xor acc
-                                 (bit-rotate-left val (mod idx 8))))
+                                 (bit-or (bit-shift-left val (mod idx 8))
+                                         (bit-shift-right val (- 8 (mod idx 8))))))
                       0
                       (map-indexed vector all-data))]
     {:mixed-value mixed
@@ -73,7 +74,3 @@
            :seed (hash (str (:mixed-value mixed) 
                             (:timestamp mixed)
                             (rand))))))
-
-(defn bit-rotate-left [n bits]
-  (bit-or (bit-shift-left n bits)
-          (unsigned-bit-shift-right n (- 32 bits))))

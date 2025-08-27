@@ -92,10 +92,10 @@
   [data entropy]
   (let [void-path (traverse-void entropy 3)
         transform-fn (fn [x]
-                       (-> x
-                           (bit-xor entropy)
-                           (mod 256)
-                           (bit-rotate-left (mod entropy 8))))]
+                       (let [val (mod (bit-xor x entropy) 256)
+                             bits (mod entropy 8)]
+                         (bit-or (bit-shift-left val bits)
+                                 (bit-shift-right val (- 8 bits)))))]
     {:original data
      :transformed (map transform-fn data)
      :void-path void-path
@@ -109,7 +109,3 @@
          "Where " (name aspect) " reigns eternal,\n"
          "All meaning dissolves to nothing,\n"
          "And entropy claims its throne.")))
-
-(defn bit-rotate-left [n bits]
-  (bit-or (bit-shift-left n bits)
-          (unsigned-bit-shift-right n (- 32 bits))))
