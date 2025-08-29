@@ -259,7 +259,8 @@
 ;;; Routes  
 (defroutes simple-bloomed-routes
   (GET "/" []
-    (response/response (simple-bloomed-page @simple-bloomed-state)))
+    (-> (response/response (simple-bloomed-page @simple-bloomed-state))
+        (response/header "Content-Type" "text/html; charset=utf-8")))
 
   (POST "/api/bloom" []
     (let [new-entropy (rand-int 1000000)
