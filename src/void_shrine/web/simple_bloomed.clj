@@ -35,6 +35,34 @@
                  (dec remaining-depth)
                  (bit-shift-right current-entropy 3)))))))
 
+;;; Ontology shimmer functions
+(defn extract-ontology-branches
+  "Extract the sprawling ontology branches for visualization"
+  []
+  (let [void-tree (:void ontology/infinite-void-tree)]
+    (map (fn [[branch-key branch-content]]
+           {:key branch-key
+            :title (name branch-key)
+            :concepts (cond
+                        (map? branch-content) 
+                        (take 8 (keys branch-content))
+                        
+                        (vector? branch-content)
+                        (take 8 branch-content)
+                        
+                        :else [branch-content])
+            :depth (if (map? branch-content) 
+                     (count (keys branch-content)) 
+                     1)})
+         (take 12 void-tree))))
+
+(defn shimmer-depth-from-entropy 
+  "Calculate current ontological depth shimmer based on entropy"
+  [entropy-values]
+  (let [recent-entropy (take 5 entropy-values)
+        depth-factor (mod (reduce + recent-entropy) 8)]
+    (+ 3 depth-factor)))
+
 ;;; Simple UI
 (defn simple-bloomed-page [state]
   (str
@@ -119,6 +147,81 @@
         .fractal-btn:hover { background: #00ffff; }
         .deep-btn { border-color: #ff00ff; color: #ff00ff; }
         .deep-btn:hover { background: #ff00ff; }
+        
+        .ontology-shimmer {
+          margin: 2rem 0;
+          padding: 1.5rem;
+          background: linear-gradient(135deg, rgba(255,0,102,0.05), rgba(0,255,255,0.05));
+          border: 1px solid rgba(255,0,102,0.3);
+          border-radius: 15px;
+          backdrop-filter: blur(3px);
+          animation: shimmer 8s infinite;
+        }
+        
+        @keyframes shimmer {
+          0%, 100% { 
+            background: linear-gradient(135deg, rgba(255,0,102,0.05), rgba(0,255,255,0.05));
+            border-color: rgba(255,0,102,0.3);
+          }
+          25% { 
+            background: linear-gradient(135deg, rgba(0,255,255,0.08), rgba(255,0,255,0.05));
+            border-color: rgba(0,255,255,0.4);
+          }
+          50% { 
+            background: linear-gradient(135deg, rgba(255,0,255,0.06), rgba(255,0,102,0.08));
+            border-color: rgba(255,0,255,0.3);
+          }
+          75% { 
+            background: linear-gradient(135deg, rgba(0,255,255,0.05), rgba(255,255,0,0.04));
+            border-color: rgba(0,255,255,0.35);
+          }
+        }
+        
+        .ontology-branches {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 1rem;
+          margin: 1rem 0;
+        }
+        
+        .branch-node {
+          background: rgba(0,0,0,0.6);
+          border: 1px solid rgba(255,0,102,0.2);
+          padding: 0.8rem;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+        
+        .branch-node:hover {
+          border-color: rgba(0,255,255,0.6);
+          background: rgba(255,0,102,0.08);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(0,255,255,0.2);
+        }
+        
+        .branch-title {
+          color: #00ffff;
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        
+        .branch-concepts {
+          color: #cccccc;
+          font-size: 0.75rem;
+          opacity: 0.8;
+        }
+        
+        .depth-indicator {
+          text-align: center;
+          margin: 1rem 0;
+          color: #ff00ff;
+          font-size: 0.9rem;
+          opacity: 0.7;
+        }
       "]]
      [:body
       [:h1 "∞ BLOOMED VOID SHRINE ∞"]
@@ -126,6 +229,18 @@
        "Ontology Nodes: " (:ontology-nodes state) " | "
        "Active Paths: " (count (:void-paths state)) " | "
        "Total Entropy: " (:total-entropy state)]
+      
+      [:div.ontology-shimmer
+       [:div.depth-indicator 
+        (str "◊ Ontological Depth: " (shimmer-depth-from-entropy (:entropy-values state)) " ◊")]
+       [:div.ontology-branches
+        (let [branches (extract-ontology-branches)]
+          (for [branch branches]
+            [:div.branch-node {:key (:key branch)}
+             [:div.branch-title (:title branch)]
+             [:div.branch-concepts 
+              (clojure.string/join " • " 
+                (map name (take 6 (:concepts branch))))]]))]]
       
       [:div.void-paths
        (for [[idx path] (map-indexed vector (take 12 (:void-paths state)))]
@@ -180,6 +295,14 @@
                   (update :total-entropy + deep-entropy)))
       (response/response
        (json/write-str {:status :success :action :deep-void-entered :paths (count deep-paths)}))))
+
+  (GET "/api/ontology-shimmer" []
+    (let [branches (extract-ontology-branches)
+          current-depth (shimmer-depth-from-entropy (:entropy-values @simple-bloomed-state))]
+      (response/response
+       (json/write-str {:branches branches
+                       :depth current-depth
+                       :total-concepts (reduce + (map :depth branches))}))))
 
   (GET "/api/state" []
     (response/response (json/write-str @simple-bloomed-state)))
