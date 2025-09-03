@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>🌀 Agent Orchestrator: Multi-LLM Command Matrix</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background: radial-gradient(ellipse at center, #000510 0%, #0a0a1e 30%, #000000 100%);
+            color: #e0e0ff;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .cosmic-void {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(2px 2px at 20px 30px, #ffffff, transparent),
+                radial-gradient(2px 2px at 40px 70px, #ffffff, transparent),
+                radial-gradient(1px 1px at 90px 40px, #ffffff, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: stars 20s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes stars {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-100px); }
+        }
+        
+        .orchestrator-grid {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-areas:
+                "header header header header"
+                "tactical science ops engineering"
+                "creative research analysis support"
+                "monitor prompt controls results";
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto repeat(3, 300px) 200px;
+            gap: 15px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header-panel {
+            grid-area: header;
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%);
+            border: 3px solid transparent;
+            border-image: linear-gradient(45deg, #8a2be2, #ff6b6b, #00ffaa, #8a2be2) 1;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #8a2be2;
+            text-shadow: 0 0 30px currentColor;
+            margin-bottom: 10px;
+        }
+        
+        .system-status {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+        
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00ffaa;
+        }
+        
+        .agent-station {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 2px solid var(--agent-color);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(var(--agent-rgb), 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .agent-station::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--agent-color), transparent);
+            animation: agent-scan 3s infinite;
+        }
+        
+        @keyframes agent-scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .tactical { 
+            grid-area: tactical; 
+            --agent-color: #ff4444; 
+            --agent-rgb: 255, 68, 68;
+        }
+        .science { 
+            grid-area: science; 
+            --agent-color: #4488ff; 
+            --agent-rgb: 68, 136, 255;
+        }
+        .ops { 
+            grid-area: ops; 
+            --agent-color: #00ffaa; 
+            --agent-rgb: 0, 255, 170;
+        }
+        .engineering { 
+            grid-area: engineering; 
+            --agent-color: #ffaa00; 
+            --agent-rgb: 255, 170, 0;
+        }
+        .creative { 
+            grid-area: creative; 
+            --agent-color: #ff6b6b; 
+            --agent-rgb: 255, 107, 107;
+        }
+        .research { 
+            grid-area: research; 
+            --agent-color: #4ecdc4; 
+            --agent-rgb: 78, 205, 196;
+        }
+        .analysis { 
+            grid-area: analysis; 
+            --agent-color: #45b7d1; 
+            --agent-rgb: 69, 183, 209;
+        }
+        .support { 
+            grid-area: support; 
+            --agent-color: #96ceb4; 
+            --agent-rgb: 150, 206, 180;
+        }
+        
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .agent-name {
+            font-weight: bold;
+            color: var(--agent-color);
+            text-shadow: 0 0 10px var(--agent-color);
+        }
+        
+        .agent-status {
+            background: var(--agent-color);
+            color: black;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+        
+        .agent-model {
+            font-size: 0.7em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .agent-response {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 0.8em;
+            line-height: 1.4;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        
+        .agent-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        .agent-button {
+            background: rgba(var(--agent-rgb), 0.2);
+            border: 1px solid var(--agent-color);
+            color: var(--agent-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .agent-button:hover {
+            background: var(--agent-color);
+            color: black;
+        }
+        
+        .monitor-panel {
+            grid-area: monitor;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #8a2be2;
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .prompt-panel {
+            grid-area: prompt;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ffaa;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .controls-panel {
+            grid-area: controls;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .results-panel {
+            grid-area: results;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffaa00;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .panel-title {
+            font-weight: bold;
+            color: inherit;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .prompt-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ffaa;
+            border-radius: 10px;
+            padding: 10px;
+            color: #e0e0ff;
+            font-family: inherit;
+            font-size: 0.8em;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .prompt-input:focus {
+            outline: none;
+            border-color: #8a2be2;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+        }
+        
+        .config-section {
+            margin-bottom: 15px;
+        }
+        
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.7em;
+        }
+        
+        .config-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #666;
+            color: #e0e0ff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: inherit;
+            width: 60%;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: #8a2be2;
+        }
+        
+        .execute-button {
+            background: #8a2be2;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .execute-button:hover {
+            background: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+        
+        .metrics-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.7em;
+        }
+        
+        .metric-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #00ffaa;
+            font-size: 1.1em;
+        }
+        
+        .log-display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px;
+            height: 100px;
+            overflow-y: auto;
+            font-size: 0.65em;
+            line-height: 1.3;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            opacity: 0.8;
+        }
+        
+        .log-entry.system { color: #8a2be2; }
+        .log-entry.agent { color: #00ffaa; }
+        .log-entry.error { color: #ff4444; }
+        
+        @media (max-width: 1200px) {
+            .orchestrator-grid {
+                grid-template-areas:
+                    "header header"
+                    "tactical science"
+                    "ops engineering"
+                    "creative research"
+                    "analysis support"
+                    "monitor prompt"
+                    "controls results";
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .orchestrator-grid {
+                grid-template-areas:
+                    "header"
+                    "tactical"
+                    "science"
+                    "ops"
+                    "engineering"
+                    "creative"
+                    "research"
+                    "analysis"
+                    "support"
+                    "monitor"
+                    "prompt"
+                    "controls"
+                    "results";
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .secrets-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #8a2be2;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.6em;
+        }
+        
+        .secret-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 2px 0;
+        }
+        
+        .secret-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        
+        .secret-dot.active {
+            background: #00ffaa;
+            box-shadow: 0 0 6px currentColor;
+        }
+    </style>
+</head>
+<body>
+    <div class="cosmic-void"></div>
+    
+    <div class="secrets-status">
+        <div class="secret-indicator">
+            <div class="secret-dot active" id="envSecrets"></div>
+            <span>ENV Secrets</span>
+        </div>
+        <div class="secret-indicator">
+            <div class="secret-dot" id="githubSecrets"></div>
+            <span>GitHub Secrets</span>
+        </div>
+        <div class="secret-indicator">
+            <div class="secret-dot" id="dockerSecrets"></div>
+            <span>Docker Secrets</span>
+        </div>
+        <div class="secret-indicator">
+            <div class="secret-dot active" id="localSecrets"></div>
+            <span>Local Config</span>
+        </div>
+    </div>
+    
+    <div class="orchestrator-grid">
+        <div class="header-panel">
+            <div class="header-title">🌀 Multi-LLM Agent Orchestrator</div>
+            <div>Advanced AI swarm coordination with OpenRouter integration</div>
+            <div class="system-status">
+                <div class="status-item">
+                    <div class="status-value" id="activeAgents">8</div>
+                    <div>Active Agents</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="totalRequests">0</div>
+                    <div>Total Requests</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="avgLatency">0ms</div>
+                    <div>Avg Latency</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="coherence">87%</div>
+                    <div>Swarm Coherence</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="agent-station tactical">
+            <div class="agent-header">
+                <div class="agent-name">🎯 TACTICAL COMMANDER</div>
+                <div class="agent-status" id="tacticalStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Claude 3.5 Sonnet</div>
+            <div class="agent-response" id="tacticalResponse">
+                Standing by for strategic analysis and tactical coordination. Specialized in threat assessment, resource allocation, and decisive action planning.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('tactical')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('tactical')">RESET</button>
+                <button class="agent-button" onclick="testAgent('tactical')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station science">
+            <div class="agent-header">
+                <div class="agent-name">🔬 SCIENCE ANALYST</div>
+                <div class="agent-status" id="scienceStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: GPT-4</div>
+            <div class="agent-response" id="scienceResponse">
+                Analytical protocols active. Ready for deep pattern recognition, hypothesis generation, and systematic investigation of complex problems.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('science')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('science')">RESET</button>
+                <button class="agent-button" onclick="testAgent('science')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station ops">
+            <div class="agent-header">
+                <div class="agent-name">⚡ OPERATIONS</div>
+                <div class="agent-status" id="opsStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Llama 3.1 405B</div>
+            <div class="agent-response" id="opsResponse">
+                Execution engines online. Coordinating systematic implementation of strategies across all operational vectors. Ready for deployment.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('ops')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('ops')">RESET</button>
+                <button class="agent-button" onclick="testAgent('ops')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station engineering">
+            <div class="agent-header">
+                <div class="agent-name">🔧 ENGINEERING</div>
+                <div class="agent-status" id="engineeringStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Gemini Pro</div>
+            <div class="agent-response" id="engineeringResponse">
+                Systems architecture initialized. Ready for technical implementation, infrastructure design, and scalable solution construction.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('engineering')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('engineering')">RESET</button>
+                <button class="agent-button" onclick="testAgent('engineering')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station creative">
+            <div class="agent-header">
+                <div class="agent-name">🎨 CREATIVE SYNTHESIS</div>
+                <div class="agent-status" id="creativeStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: GPT-4 Turbo</div>
+            <div class="agent-response" id="creativeResponse">
+                Creative matrices active. Generating novel approaches, artistic solutions, and innovative perspectives on complex challenges.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('creative')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('creative')">RESET</button>
+                <button class="agent-button" onclick="testAgent('creative')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station research">
+            <div class="agent-header">
+                <div class="agent-name">📚 RESEARCH</div>
+                <div class="agent-status" id="researchStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Claude 3 Opus</div>
+            <div class="agent-response" id="researchResponse">
+                Research protocols engaged. Conducting deep investigation, knowledge synthesis, and comprehensive analysis across domains.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('research')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('research')">RESET</button>
+                <button class="agent-button" onclick="testAgent('research')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station analysis">
+            <div class="agent-header">
+                <div class="agent-name">📊 ANALYSIS ENGINE</div>
+                <div class="agent-status" id="analysisStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Mixtral 8x7B</div>
+            <div class="agent-response" id="analysisResponse">
+                Data processing systems online. Performing statistical analysis, trend identification, and quantitative assessment protocols.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('analysis')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('analysis')">RESET</button>
+                <button class="agent-button" onclick="testAgent('analysis')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="agent-station support">
+            <div class="agent-header">
+                <div class="agent-name">🛠️ SUPPORT SYSTEMS</div>
+                <div class="agent-status" id="supportStatus">READY</div>
+            </div>
+            <div class="agent-model">Model: Perplexity 70B</div>
+            <div class="agent-response" id="supportResponse">
+                Support infrastructure active. Monitoring system health, optimizing performance, and ensuring operational resilience.
+            </div>
+            <div class="agent-controls">
+                <button class="agent-button" onclick="focusAgent('support')">FOCUS</button>
+                <button class="agent-button" onclick="resetAgent('support')">RESET</button>
+                <button class="agent-button" onclick="testAgent('support')">TEST</button>
+            </div>
+        </div>
+        
+        <div class="monitor-panel">
+            <div class="panel-title" style="color: #8a2be2;">📊 System Monitor</div>
+            <div class="metrics-display">
+                <div class="metric-item">
+                    <div class="metric-value" id="requestsPerMin">0</div>
+                    <div>Req/Min</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="errorRate">0%</div>
+                    <div>Error Rate</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="tokenUsage">0K</div>
+                    <div>Tokens Used</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="costEstimate">$0.00</div>
+                    <div>Est. Cost</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="prompt-panel">
+            <div class="panel-title" style="color: #00ffaa;">💭 Command Prompt</div>
+            <textarea class="prompt-input" id="mainPrompt" 
+                placeholder="Enter your multi-agent command here... The swarm awaits your instruction..."></textarea>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="panel-title" style="color: #ff6b6b;">🎛️ Controls</div>
+            <div class="config-section">
+                <div class="config-row">
+                    <label>Parallel Execution:</label>
+                    <input type="checkbox" id="parallelMode" checked>
+                </div>
+                <div class="config-row">
+                    <label>Response Synthesis:</label>
+                    <input type="checkbox" id="synthesisMode" checked>
+                </div>
+                <div class="config-row">
+                    <label>Max Tokens:</label>
+                    <input type="number" class="config-input" id="maxTokens" value="2000" min="100" max="4000">
+                </div>
+                <div class="config-row">
+                    <label>Temperature:</label>
+                    <input type="range" class="config-input" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                </div>
+            </div>
+            <button class="execute-button" onclick="executeSwarmCommand()">
+                🚀 EXECUTE SWARM COMMAND
+            </button>
+        </div>
+        
+        <div class="results-panel">
+            <div class="panel-title" style="color: #ffaa00;">📋 Activity Log</div>
+            <div class="log-display" id="activityLog">
+                <div class="log-entry system">[SYSTEM] Agent orchestrator initialized</div>
+                <div class="log-entry system">[SYSTEM] OpenRouter API configured</div>
+                <div class="log-entry system">[SYSTEM] 8 agents ready for deployment</div>
+                <div class="log-entry system">[SYSTEM] Secrets management active</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AgentOrchestrator {
+            constructor() {
+                this.agents = new Map([
+                    ['tactical', { 
+                        model: 'anthropic/claude-3.5-sonnet', 
+                        specialty: 'strategic analysis and tactical coordination',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['science', { 
+                        model: 'openai/gpt-4', 
+                        specialty: 'pattern recognition and systematic investigation',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['ops', { 
+                        model: 'meta-llama/llama-3.1-405b', 
+                        specialty: 'systematic implementation and coordination',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['engineering', { 
+                        model: 'google/gemini-pro', 
+                        specialty: 'technical implementation and architecture',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['creative', { 
+                        model: 'openai/gpt-4-turbo', 
+                        specialty: 'creative synthesis and innovative solutions',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['research', { 
+                        model: 'anthropic/claude-3-opus', 
+                        specialty: 'research and knowledge synthesis',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['analysis', { 
+                        model: 'mistralai/mixtral-8x7b-instruct', 
+                        specialty: 'data analysis and quantitative assessment',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }],
+                    ['support', { 
+                        model: 'perplexity/llama-3.1-70b', 
+                        specialty: 'system optimization and operational support',
+                        status: 'ready',
+                        responseTime: 0,
+                        lastResponse: null
+                    }]
+                ]);
+                
+                this.config = {
+                    apiKey: this.loadApiKey(),
+                    apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+                    maxTokens: 2000,
+                    temperature: 0.7,
+                    parallelExecution: true,
+                    synthesisMode: true
+                };
+                
+                this.metrics = {
+                    totalRequests: 0,
+                    requestsPerMin: 0,
+                    errorRate: 0,
+                    tokenUsage: 0,
+                    estimatedCost: 0,
+                    avgLatency: 0
+                };
+                
+                this.secretsSources = new Map([
+                    ['env', { active: true, priority: 1 }],
+                    ['github', { active: false, priority: 2 }],
+                    ['docker', { active: false, priority: 3 }],
+                    ['local', { active: true, priority: 4 }]
+                ]);
+                
+                this.initializeSecrets();
+                this.startMetricsMonitoring();
+            }
+            
+            loadApiKey() {
+                // Multi-layered secrets management
+                const sources = [
+                    () => process?.env?.OPENROUTER_API_KEY,
+                    () => localStorage.getItem('openrouter_api_key'),
+                    () => this.getGithubSecret('OPENROUTER_API_KEY'),
+                    () => this.getDockerSecret('openrouter_api_key'),
+                    () => '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' // Fallback
+                ];
+                
+                for (const source of sources) {
+                    try {
+                        const key = source();
+                        if (key && key.startsWith('sk-or-')) {
+                            return key;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                return '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';
+            }
+            
+            initializeSecrets() {
+                // Check various secrets management systems
+                try {
+                    // Environment variables
+                    if (typeof process !== 'undefined' && process.env) {
+                        this.secretsSources.get('env').active = true;
+                        document.getElementById('envSecrets').classList.add('active');
+                    }
+                    
+                    // Local storage
+                    if (localStorage.getItem('openrouter_api_key')) {
+                        this.secretsSources.get('local').active = true;
+                        document.getElementById('localSecrets').classList.add('active');
+                    }
+                    
+                    // Docker secrets (simulated check)
+                    this.checkDockerSecrets();
+                    
+                    // GitHub secrets (simulated check)  
+                    this.checkGithubSecrets();
+                    
+                } catch (e) {
+                    this.log('Secrets initialization failed: ' + e.message, 'error');
+                }
+            }
+            
+            checkDockerSecrets() {
+                // Simulate Docker secrets check
+                fetch('/run/secrets/openrouter_api_key').then(response => {
+                    if (response.ok) {
+                        this.secretsSources.get('docker').active = true;
+                        document.getElementById('dockerSecrets').classList.add('active');
+                    }
+                }).catch(() => {});
+            }
+            
+            checkGithubSecrets() {
+                // Simulate GitHub Actions secrets access
+                if (typeof process !== 'undefined' && process.env?.GITHUB_ACTIONS) {
+                    this.secretsSources.get('github').active = true;
+                    document.getElementById('githubSecrets').classList.add('active');
+                }
+            }
+            
+            getGithubSecret(name) {
+                return process?.env?.[name] || null;
+            }
+            
+            getDockerSecret(name) {
+                // In a real implementation, this would read from /run/secrets/
+                return null;
+            }
+            
+            async executeSwarmCommand() {
+                const prompt = document.getElementById('mainPrompt').value;
+                if (!prompt.trim()) {
+                    this.log('No command provided', 'error');
+                    return;
+                }
+                
+                this.log(`Executing swarm command: "${prompt.substring(0, 50)}..."`, 'system');
+                this.updateMetrics({ totalRequests: this.metrics.totalRequests + 1 });
+                
+                const parallelMode = document.getElementById('parallelMode').checked;
+                
+                if (parallelMode) {
+                    await this.executeParallel(prompt);
+                } else {
+                    await this.executeSequential(prompt);
+                }
+                
+                if (document.getElementById('synthesisMode').checked) {
+                    await this.synthesizeResponses();
+                }
+            }
+            
+            async executeParallel(prompt) {
+                this.log('Executing parallel agent requests', 'system');
+                
+                const promises = Array.from(this.agents.keys()).map(agentId => 
+                    this.callAgent(agentId, prompt)
+                );
+                
+                try {
+                    const results = await Promise.allSettled(promises);
+                    results.forEach((result, index) => {
+                        const agentId = Array.from(this.agents.keys())[index];
+                        if (result.status === 'fulfilled') {
+                            this.log(`Agent ${agentId} completed successfully`, 'agent');
+                        } else {
+                            this.log(`Agent ${agentId} failed: ${result.reason}`, 'error');
+                        }
+                    });
+                } catch (error) {
+                    this.log(`Parallel execution error: ${error.message}`, 'error');
+                }
+            }
+            
+            async executeSequential(prompt) {
+                this.log('Executing sequential agent requests', 'system');
+                
+                for (const agentId of this.agents.keys()) {
+                    try {
+                        await this.callAgent(agentId, prompt);
+                        this.log(`Agent ${agentId} completed`, 'agent');
+                    } catch (error) {
+                        this.log(`Agent ${agentId} failed: ${error.message}`, 'error');
+                    }
+                }
+            }
+            
+            async callAgent(agentId, prompt) {
+                const agent = this.agents.get(agentId);
+                const startTime = Date.now();
+                
+                this.updateAgentStatus(agentId, 'PROCESSING');
+                
+                try {
+                    const response = await this.makeAPICall(agent.model, prompt, agent.specialty);
+                    
+                    agent.lastResponse = response;
+                    agent.responseTime = Date.now() - startTime;
+                    
+                    this.updateAgentResponse(agentId, response);
+                    this.updateAgentStatus(agentId, 'COMPLETE');
+                    
+                    // Update metrics
+                    this.updateMetrics({
+                        tokenUsage: this.metrics.tokenUsage + this.estimateTokens(response),
+                        avgLatency: (this.metrics.avgLatency + agent.responseTime) / 2
+                    });
+                    
+                    return response;
+                } catch (error) {
+                    this.updateAgentStatus(agentId, 'ERROR');
+                    this.updateAgentResponse(agentId, `Error: ${error.message}`);
+                    throw error;
+                }
+            }
+            
+            async makeAPICall(model, prompt, specialty) {
+                const systemPrompt = `You are a ${specialty} specialist in a multi-agent AI system. Provide focused, professional responses from your area of expertise.`;
+                
+                const requestBody = {
+                    model: model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: prompt }
+                    ],
+                    max_tokens: parseInt(document.getElementById('maxTokens').value),
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    stream: false
+                };
+                
+                const response = await fetch(this.config.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.config.apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.origin,
+                        'X-Title': 'Agent Orchestrator'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content;
+            }
+            
+            async synthesizeResponses() {
+                this.log('Synthesizing agent responses', 'system');
+                
+                const responses = Array.from(this.agents.values())
+                    .filter(agent => agent.lastResponse)
+                    .map(agent => agent.lastResponse);
+                
+                if (responses.length === 0) {
+                    this.log('No responses to synthesize', 'system');
+                    return;
+                }
+                
+                const synthesisPrompt = `Synthesize these agent responses into a coherent analysis:\n\n${responses.join('\n\n---\n\n')}`;
+                
+                try {
+                    const synthesis = await this.makeAPICall('anthropic/claude-3.5-sonnet', synthesisPrompt, 'synthesis coordination');
+                    
+                    // Display synthesis result
+                    const synthesisDiv = document.createElement('div');
+                    synthesisDiv.style.cssText = `
+                        background: rgba(138, 43, 226, 0.1);
+                        border: 2px solid #8a2be2;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin: 10px;
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        max-width: 80%;
+                        max-height: 70%;
+                        overflow-y: auto;
+                        z-index: 1000;
+                        color: #e0e0ff;
+                        font-size: 0.9em;
+                        line-height: 1.4;
+                    `;
+                    
+                    synthesisDiv.innerHTML = `
+                        <h3 style="color: #8a2be2; margin-bottom: 15px;">🌟 Swarm Synthesis</h3>
+                        <div>${synthesis.replace(/\n/g, '<br>')}</div>
+                        <button onclick="this.parentElement.remove()" style="
+                            background: #8a2be2;
+                            border: none;
+                            color: white;
+                            padding: 8px 16px;
+                            border-radius: 5px;
+                            margin-top: 15px;
+                            cursor: pointer;
+                        ">Close</button>
+                    `;
+                    
+                    document.body.appendChild(synthesisDiv);
+                    
+                } catch (error) {
+                    this.log(`Synthesis failed: ${error.message}`, 'error');
+                }
+            }
+            
+            updateAgentStatus(agentId, status) {
+                const agent = this.agents.get(agentId);
+                agent.status = status;
+                document.getElementById(`${agentId}Status`).textContent = status;
+            }
+            
+            updateAgentResponse(agentId, response) {
+                document.getElementById(`${agentId}Response`).textContent = response;
+            }
+            
+            updateMetrics(updates) {
+                Object.assign(this.metrics, updates);
+                
+                document.getElementById('totalRequests').textContent = this.metrics.totalRequests;
+                document.getElementById('avgLatency').textContent = `${this.metrics.avgLatency.toFixed(0)}ms`;
+                document.getElementById('tokenUsage').textContent = `${(this.metrics.tokenUsage / 1000).toFixed(1)}K`;
+                document.getElementById('costEstimate').textContent = `$${this.metrics.estimatedCost.toFixed(2)}`;
+            }
+            
+            estimateTokens(text) {
+                // Rough token estimation
+                return Math.ceil(text.length / 4);
+            }
+            
+            startMetricsMonitoring() {
+                setInterval(() => {
+                    // Update metrics periodically
+                    const activeCount = Array.from(this.agents.values()).filter(a => a.status === 'ready').length;
+                    document.getElementById('activeAgents').textContent = activeCount;
+                    
+                    // Simulate coherence calculation
+                    const coherence = Math.max(60, 100 - (this.metrics.errorRate * 10));
+                    document.getElementById('coherence').textContent = `${coherence.toFixed(0)}%`;
+                }, 2000);
+            }
+            
+            log(message, type = 'system') {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                
+                const logDisplay = document.getElementById('activityLog');
+                logDisplay.appendChild(logEntry);
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+                
+                // Keep only last 50 entries
+                while (logDisplay.children.length > 50) {
+                    logDisplay.removeChild(logDisplay.firstChild);
+                }
+            }
+        }
+        
+        // Global functions
+        function focusAgent(agentId) {
+            orchestrator.log(`Focusing on ${agentId} agent`, 'agent');
+            const station = document.querySelector(`.${agentId}`);
+            station.style.transform = 'scale(1.05)';
+            station.style.boxShadow = '0 0 40px rgba(var(--agent-rgb), 0.8)';
+            setTimeout(() => {
+                station.style.transform = '';
+                station.style.boxShadow = '0 0 20px rgba(var(--agent-rgb), 0.2)';
+            }, 2000);
+        }
+        
+        function resetAgent(agentId) {
+            orchestrator.log(`Resetting ${agentId} agent`, 'system');
+            orchestrator.updateAgentStatus(agentId, 'READY');
+            orchestrator.agents.get(agentId).lastResponse = null;
+            document.getElementById(`${agentId}Response`).textContent = 'Agent reset - ready for new commands';
+        }
+        
+        function testAgent(agentId) {
+            orchestrator.log(`Testing ${agentId} agent`, 'system');
+            orchestrator.callAgent(agentId, 'Perform a brief self-diagnostic and confirm operational status');
+        }
+        
+        function executeSwarmCommand() {
+            orchestrator.executeSwarmCommand();
+        }
+        
+        // Initialize orchestrator
+        const orchestrator = new AgentOrchestrator();
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                executeSwarmCommand();
+            }
+        });
+        
+        // Demo initialization
+        setTimeout(() => {
+            orchestrator.log('🌀 Agent Orchestrator fully operational', 'system');
+            orchestrator.log('🤖 8 AI agents ready for multi-model coordination', 'system');
+            orchestrator.log('🔐 Secrets management systems active', 'system');
+            orchestrator.log('🚀 Ready for swarm intelligence deployment', 'system');
+        }, 1000);
+        
+        console.log('🌀 Multi-LLM Agent Orchestrator initialized');
+        console.log('🤖 Available models: Claude 3.5, GPT-4, Llama 3.1, Gemini Pro, and more');
+        console.log('🔐 Multi-layered secrets management active');
+        console.log('⚡ Press Ctrl+Enter to execute swarm commands');
+    </script>
+</body>
+</html>
