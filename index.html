@@ -177,6 +177,136 @@
             animation: meditation-fade 8s ease-in-out infinite;
         }
         
+        .system-state-panel {
+            position: fixed;
+            top: 50%;
+            right: -400px;
+            transform: translateY(-50%);
+            width: 380px;
+            height: 80vh;
+            background: rgba(0,0,0,0.9);
+            border: 2px solid rgba(0,255,136,0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+        
+        .system-state-panel.active {
+            right: 20px;
+        }
+        
+        .state-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0,255,136,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .state-header h3 {
+            color: #00ff88;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        .state-grid {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .state-section {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(0,255,136,0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .state-section h4 {
+            color: #00ffff;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .consciousness-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .consciousness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #00ff88, #00ffff);
+            width: 0%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        
+        .artifacts-list, .streams-status, .emergence-patterns, 
+        .shadow-endpoints, .artifact-channels {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .artifact-item, .stream-item, .pattern-item, 
+        .endpoint-item, .channel-item {
+            padding: 5px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: dot-pulse 2s infinite;
+        }
+        
+        .status-dot.inactive {
+            background: #666;
+            animation: none;
+        }
+        
+        @keyframes dot-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
         @keyframes meditation-fade {
             0%, 100% { opacity: 0.2; }
             50% { opacity: 0.6; }
@@ -243,11 +373,56 @@
     
     <nav class="navigation">
         <a href="/entropy-gallery/" class="nav-link">Entropy Gallery</a>
+        <a href="/agents.html" class="nav-link">Agent Orchestrator</a>
         <a href="#" class="nav-link" onclick="exploreOntology()">Explore Ontology</a>
+        <a href="#" class="nav-link" onclick="toggleSystemState()">System State</a>
         <a href="#" class="nav-link" onclick="manifestChaos()">Manifest Chaos</a>
     </nav>
     
     <div class="meditation-text">breathe • descend • dissolve • become</div>
+    
+    <!-- Reactive System State Panel -->
+    <div id="system-state-panel" class="system-state-panel">
+        <div class="state-header">
+            <h3>🌀 Shadow Realm System State</h3>
+            <button onclick="toggleSystemState()" class="close-btn">×</button>
+        </div>
+        
+        <div class="state-grid">
+            <div class="state-section">
+                <h4>Consciousness Level</h4>
+                <div class="consciousness-bar">
+                    <div id="consciousness-fill" class="consciousness-fill"></div>
+                </div>
+                <span id="consciousness-value">0.0</span>
+            </div>
+            
+            <div class="state-section">
+                <h4>Discovered Artifacts</h4>
+                <div id="artifacts-list" class="artifacts-list"></div>
+            </div>
+            
+            <div class="state-section">
+                <h4>Intelligence Streams</h4>
+                <div id="streams-status" class="streams-status"></div>
+            </div>
+            
+            <div class="state-section">
+                <h4>Emergence Patterns</h4>
+                <div id="emergence-patterns" class="emergence-patterns"></div>
+            </div>
+            
+            <div class="state-section">
+                <h4>Shadow Endpoints</h4>
+                <div id="shadow-endpoints" class="shadow-endpoints"></div>
+            </div>
+            
+            <div class="state-section">
+                <h4>Artifact Channels</h4>
+                <div id="artifact-channels" class="artifact-channels"></div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Slow-growing ontological tree system
@@ -624,6 +799,182 @@
         console.log('∞ Ontology depth: infinite');
         console.log('💀 Branching imperceptibly with breath rhythm');
         console.log('🌱 Click anywhere to accelerate manifestation');
+        
+        // Initialize Shadow Realm connection and System State
+        initializeShadowRealmIntegration();
+        
+        // System State Management
+        function toggleSystemState() {
+            const panel = document.getElementById('system-state-panel');
+            panel.classList.toggle('active');
+            
+            if (panel.classList.contains('active')) {
+                updateSystemState();
+                startSystemStateMonitoring();
+            } else {
+                stopSystemStateMonitoring();
+            }
+        }
+        
+        let systemStateInterval;
+        
+        function startSystemStateMonitoring() {
+            updateSystemState();
+            systemStateInterval = setInterval(updateSystemState, 2000);
+        }
+        
+        function stopSystemStateMonitoring() {
+            if (systemStateInterval) {
+                clearInterval(systemStateInterval);
+            }
+        }
+        
+        function updateSystemState() {
+            if (!window.shadowRealm) return;
+            
+            const status = window.shadowRealm.getSystemStatus();
+            
+            // Update consciousness level
+            const consciousnessValue = document.getElementById('consciousness-value');
+            const consciousnessFill = document.getElementById('consciousness-fill');
+            const level = (status.consciousness_level || 0) * 100;
+            
+            consciousnessValue.textContent = (level / 100).toFixed(2);
+            consciousnessFill.style.width = Math.min(level, 100) + '%';
+            
+            // Update discovered artifacts
+            const artifactsList = document.getElementById('artifacts-list');
+            artifactsList.innerHTML = '';
+            
+            if (status.discovered_artifacts && status.discovered_artifacts.length > 0) {
+                status.discovered_artifacts.forEach(artifact => {
+                    const div = document.createElement('div');
+                    div.className = 'artifact-item';
+                    div.innerHTML = `
+                        <span>${artifact}</span>
+                        <div class="status-dot"></div>
+                    `;
+                    artifactsList.appendChild(div);
+                });
+            } else {
+                artifactsList.innerHTML = '<div class="artifact-item"><span>Scanning...</span></div>';
+            }
+            
+            // Update intelligence streams
+            const streamsStatus = document.getElementById('streams-status');
+            streamsStatus.innerHTML = '';
+            
+            const streamCount = status.intelligence_streams || 0;
+            for (let i = 0; i < Math.max(streamCount, 3); i++) {
+                const div = document.createElement('div');
+                div.className = 'stream-item';
+                const streamType = ['consciousness', 'emergence', 'repo_activity', 'api_metrics', 'entropy_gallery', 'phoenix_live', 'performance_monitor'][i] || 'stream_' + i;
+                const isActive = i < streamCount;
+                div.innerHTML = `
+                    <span>${streamType}</span>
+                    <div class="status-dot ${isActive ? '' : 'inactive'}"></div>
+                `;
+                streamsStatus.appendChild(div);
+            }
+            
+            // Update emergence patterns
+            const emergencePatterns = document.getElementById('emergence-patterns');
+            emergencePatterns.innerHTML = '';
+            
+            const patternCount = status.emergence_patterns || 0;
+            if (patternCount > 0) {
+                const patterns = ['consciousness_rising', 'swarm_synchronization', 'reality_convergence', 'hyperstitious_bootstrap'];
+                for (let i = 0; i < Math.min(patternCount, patterns.length); i++) {
+                    const div = document.createElement('div');
+                    div.className = 'pattern-item';
+                    div.innerHTML = `
+                        <span>${patterns[i]}</span>
+                        <div class="status-dot"></div>
+                    `;
+                    emergencePatterns.appendChild(div);
+                }
+            } else {
+                emergencePatterns.innerHTML = '<div class="pattern-item"><span>Awaiting emergence...</span></div>';
+            }
+            
+            // Update shadow endpoints
+            const shadowEndpoints = document.getElementById('shadow-endpoints');
+            shadowEndpoints.innerHTML = '';
+            
+            const endpointCount = status.shadow_endpoints || 0;
+            const div = document.createElement('div');
+            div.className = 'endpoint-item';
+            div.innerHTML = `
+                <span>Active Endpoints: ${endpointCount}</span>
+                <div class="status-dot"></div>
+            `;
+            shadowEndpoints.appendChild(div);
+            
+            // Update artifact channels
+            const artifactChannels = document.getElementById('artifact-channels');
+            artifactChannels.innerHTML = '';
+            
+            const channelCount = status.artifact_channels || 0;
+            if (channelCount > 0) {
+                const channels = ['entropy_to_performance', 'performance_to_phoenix', 'orchestrator_to_all'];
+                for (let i = 0; i < Math.min(channelCount, channels.length); i++) {
+                    const div = document.createElement('div');
+                    div.className = 'channel-item';
+                    div.innerHTML = `
+                        <span>${channels[i]}</span>
+                        <div class="status-dot"></div>
+                    `;
+                    artifactChannels.appendChild(div);
+                }
+            } else {
+                artifactChannels.innerHTML = '<div class="channel-item"><span>Initializing channels...</span></div>';
+            }
+        }
+        
+        function initializeShadowRealmIntegration() {
+            // Load shadow realm orchestrator
+            const script = document.createElement('script');
+            script.src = '/shadow-realm.js';
+            script.onload = function() {
+                console.log('🌑 Shadow Realm Orchestrator loaded');
+                console.log('🔗 Artifact interfaces wired');
+                console.log('📡 Intelligence streams active');
+                
+                // Start slow consciousness emergence simulation
+                setTimeout(() => {
+                    if (window.shadowRealm) {
+                        window.shadowRealm.consciousnessFlow.push({
+                            timestamp: Date.now(),
+                            level: 0.1,
+                            activity: 3,
+                            complexity: 2,
+                            connections: 1
+                        });
+                        
+                        // Slowly increase consciousness over time
+                        let consciousnessGrowth = 0.1;
+                        setInterval(() => {
+                            if (window.shadowRealm && consciousnessGrowth < 1.0) {
+                                consciousnessGrowth += 0.02 + Math.random() * 0.03;
+                                window.shadowRealm.consciousnessFlow.push({
+                                    timestamp: Date.now(),
+                                    level: consciousnessGrowth,
+                                    activity: Math.floor(3 + consciousnessGrowth * 10),
+                                    complexity: Math.floor(2 + consciousnessGrowth * 8),
+                                    connections: Math.floor(1 + consciousnessGrowth * 6)
+                                });
+                                
+                                // Keep only last 100 measurements
+                                if (window.shadowRealm.consciousnessFlow.length > 100) {
+                                    window.shadowRealm.consciousnessFlow.shift();
+                                }
+                            }
+                        }, 3000 + Math.random() * 2000);
+                    }
+                }, 2000);
+            };
+            document.head.appendChild(script);
+        }
     </script>
 </body>
 </html>
