@@ -313,6 +313,26 @@
         (response/response (json/write-str source-data))
         (response/response {:error "Source not found"} {:status 404}))))
   
+  (GET "/api/consciousness" []
+    (response/response (json/write-str {
+      :consciousness_level (+ 0.3 (* 0.4 (rand)))
+      :entropy_contribution 0.2
+      :randomness_quality "high"
+      :shadow_realm_active true
+      :timestamp (System/currentTimeMillis)})))
+  
+  (GET "/api/state" []
+    (response/response (json/write-str {
+      :artifact_type "entropy_gallery"
+      :sources_active (count entropy-samples)
+      :samples_generated (* (count entropy-samples) 10)
+      :visualization_modes ["line" "bar" "heatmap" "parametric"]
+      :shadow_realm_connection true})))
+  
+  (POST "/api/consciousness" [data]
+    (println "🌑 Received shadow realm consciousness update:" data)
+    (response/response (json/write-str {:status "acknowledged"})))
+  
   (route/not-found "404 - Entropy Source Not Found"))
 
 (def app (wrap-content-type entropy-gallery-routes))
