@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict-O-Matic Semantic Architecture Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Semantic color system */
+            --primary: hsl(200, 95%, 14%);
+            --surface: hsl(200, 25%, 10%);
+            --surface-raised: hsl(200, 20%, 13%);
+            --surface-overlay: hsla(200, 30%, 8%, 0.95);
+            
+            --accent-cyan: hsl(180, 100%, 45%);
+            --accent-blue: hsl(210, 100%, 60%);
+            --accent-purple: hsl(270, 100%, 65%);
+            --accent-pink: hsl(330, 100%, 65%);
+            --accent-green: hsl(150, 80%, 50%);
+            --accent-orange: hsl(30, 100%, 60%);
+            
+            --text-primary: hsl(200, 20%, 93%);
+            --text-secondary: hsl(200, 15%, 73%);
+            --text-tertiary: hsl(200, 10%, 53%);
+            
+            /* Predict-O-Matic brand colors */
+            --predict-gold: hsl(45, 100%, 60%);
+            --predict-blue: hsl(210, 100%, 55%);
+            --predict-green: hsl(150, 80%, 50%);
+            
+            /* Interaction states */
+            --hover-lift: translateY(-2px);
+            --active-scale: scale(0.98);
+            --focus-ring: 0 0 0 3px hsla(180, 100%, 45%, 0.3);
+            
+            /* Timing */
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: default;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Canvas container */
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #main-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #main-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Top toolbar */
+        .toolbar {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 16px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            box-shadow: 
+                0 10px 40px hsla(0, 0%, 0%, 0.4),
+                inset 0 1px 0 hsla(200, 20%, 100%, 0.08);
+            z-index: 100;
+            animation: slideDown 0.5s var(--ease-out);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 8px;
+            padding: 0 8px;
+            border-right: 1px solid hsla(200, 20%, 100%, 0.08);
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-button {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s var(--ease-out);
+            font-size: 18px;
+        }
+
+        .toolbar-button:hover {
+            background: hsla(200, 20%, 100%, 0.08);
+            color: var(--text-primary);
+            transform: var(--hover-lift);
+        }
+
+        .toolbar-button:active {
+            transform: var(--active-scale);
+        }
+
+        .toolbar-button.active {
+            background: var(--accent-cyan);
+            color: var(--primary);
+            box-shadow: 
+                0 4px 12px hsla(180, 100%, 45%, 0.3),
+                inset 0 1px 0 hsla(180, 100%, 60%, 0.4);
+        }
+
+        .toolbar-button.profiling-active {
+            background: var(--predict-gold);
+            color: var(--primary);
+            animation: profilePulse 2s infinite;
+        }
+
+        @keyframes profilePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .toolbar-button[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 12px;
+            background: var(--surface-raised);
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            animation: tooltipIn 0.2s 0.5s var(--ease-out) forwards;
+        }
+
+        @keyframes tooltipIn {
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Enhanced lens panel */
+        .lens-panel {
+            position: fixed;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 360px;
+            max-height: 85vh;
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 20px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            box-shadow: 
+                0 20px 60px hsla(0, 0%, 0%, 0.5),
+                inset 0 1px 0 hsla(200, 20%, 100%, 0.08);
+            overflow: hidden;
+            z-index: 100;
+            animation: slideIn 0.5s var(--ease-out);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50%) translateX(-20px);
+            }
+        }
+
+        .lens-header {
+            padding: 20px;
+            border-bottom: 1px solid hsla(200, 20%, 100%, 0.08);
+            background: linear-gradient(135deg, var(--predict-blue), var(--predict-gold));
+            color: var(--primary);
+        }
+
+        .lens-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .lens-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .lens-content {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(85vh - 100px);
+        }
+
+        .lens-section {
+            margin-bottom: 24px;
+        }
+
+        .lens-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+        }
+
+        /* API connection status */
+        .api-status {
+            background: hsla(200, 30%, 10%, 0.5);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .status-connected {
+            color: var(--predict-green);
+        }
+
+        .status-disconnected {
+            color: var(--accent-orange);
+        }
+
+        .keyword-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+        }
+
+        .keyword-chip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            background: hsla(200, 20%, 100%, 0.05);
+            border: 1px solid hsla(200, 20%, 100%, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s var(--ease-out);
+            user-select: none;
+        }
+
+        .keyword-chip:hover {
+            background: hsla(200, 20%, 100%, 0.1);
+            border-color: hsla(200, 20%, 100%, 0.2);
+            transform: var(--hover-lift);
+        }
+
+        .keyword-chip.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: var(--primary);
+            font-weight: 500;
+            box-shadow: 0 4px 12px hsla(180, 100%, 45%, 0.2);
+        }
+
+        .filter-expression {
+            padding: 16px;
+            background: hsla(200, 30%, 10%, 0.5);
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        /* Architecture Layer Panel */
+        .architecture-panel {
+            position: fixed;
+            right: 24px;
+            top: 24px;
+            width: 320px;
+            max-height: 80vh;
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 20px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            box-shadow: 
+                0 20px 60px hsla(0, 0%, 0%, 0.5),
+                inset 0 1px 0 hsla(200, 20%, 100%, 0.08);
+            overflow: hidden;
+            z-index: 100;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s var(--ease-out);
+        }
+
+        .architecture-panel.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .arch-header {
+            padding: 20px;
+            border-bottom: 1px solid hsla(200, 20%, 100%, 0.08);
+            background: linear-gradient(135deg, var(--predict-blue), var(--predict-green));
+            color: var(--primary);
+        }
+
+        .arch-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .arch-content {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(80vh - 80px);
+        }
+
+        .layer-item {
+            background: hsla(200, 20%, 100%, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--predict-gold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .layer-item:hover {
+            background: hsla(200, 20%, 100%, 0.08);
+            transform: translateX(4px);
+        }
+
+        .layer-item.active {
+            background: hsla(45, 100%, 60%, 0.1);
+            border-left-color: var(--predict-gold);
+        }
+
+        .layer-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .layer-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .layer-stat {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-tertiary);
+        }
+
+        /* Info overlay */
+        .info-overlay {
+            position: fixed;
+            top: 24px;
+            right: 380px;
+            width: 300px;
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 16px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            padding: 20px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s var(--ease-out);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .info-overlay.visible {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .info-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--predict-gold);
+        }
+
+        .info-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+
+        .info-stats {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid hsla(200, 20%, 100%, 0.05);
+        }
+
+        .info-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .info-stat-value {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Command palette */
+        .command-palette {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            width: 600px;
+            max-width: 90vw;
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 20px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            box-shadow: 
+                0 40px 80px hsla(0, 0%, 0%, 0.6),
+                inset 0 1px 0 hsla(200, 20%, 100%, 0.08);
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s var(--ease-out);
+            z-index: 1000;
+        }
+
+        .command-palette.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+
+        .command-input {
+            width: 100%;
+            padding: 20px 24px;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            color: var(--text-primary);
+            outline: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .command-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .command-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border-top: 1px solid hsla(200, 20%, 100%, 0.08);
+        }
+
+        .command-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .command-item:hover,
+        .command-item.selected {
+            background: hsla(200, 20%, 100%, 0.05);
+        }
+
+        .command-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: hsla(200, 20%, 100%, 0.08);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .command-text {
+            flex: 1;
+        }
+
+        .command-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .command-description {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .architecture-panel {
+                right: 0;
+                top: auto;
+                bottom: 0;
+                width: 100%;
+                max-height: 40vh;
+                border-radius: 20px 20px 0 0;
+            }
+
+            .info-overlay {
+                right: 24px;
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .lens-panel {
+                left: 0;
+                top: auto;
+                bottom: 0;
+                transform: none;
+                width: 100%;
+                max-height: 50vh;
+                border-radius: 20px 20px 0 0;
+            }
+
+            .toolbar {
+                top: 12px;
+                padding: 8px;
+            }
+
+            .info-overlay {
+                right: 12px;
+                top: auto;
+                bottom: 60vh;
+                width: calc(100% - 24px);
+            }
+        }
+
+        /* Focus states */
+        *:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="main-canvas"></canvas>
+    </div>
+
+    <!-- Enhanced toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="toolbar-button active" data-tooltip="Explore" data-mode="explore">
+                <span>🔍</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="Profile" data-mode="profile">
+                <span>📊</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="Connect" data-mode="connect">
+                <span>🔗</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="Focus" data-mode="focus">
+                <span>🎯</span>
+            </button>
+        </div>
+        <div class="toolbar-group">
+            <button class="toolbar-button" data-tooltip="Architecture" id="architecture-toggle">
+                <span>🏗️</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="Semantic Graph" id="semantic-graph-toggle">
+                <span>🌀</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="MCP Service" id="mcp-toggle">
+                <span>🔧</span>
+            </button>
+        </div>
+        <div class="toolbar-group">
+            <button class="toolbar-button" data-tooltip="Agent Orchestrator" id="agent-orchestrator-toggle">
+                <span>🎵</span>
+            </button>
+            <button class="toolbar-button" data-tooltip="Command Palette" id="command-palette-toggle">
+                <span>⌘</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Enhanced lens panel -->
+    <div class="lens-panel" id="lens-panel">
+        <div class="lens-header">
+            <div class="lens-title">Predict-O-Matic Control Center</div>
+            <div class="lens-subtitle">Real-time system integration</div>
+        </div>
+        <div class="lens-content">
+            <div class="lens-section">
+                <div class="lens-section-title">Backend Services</div>
+                <div class="api-status">
+                    <div class="status-row">
+                        <span class="status-label">Semantic Graph</span>
+                        <span class="status-value status-disconnected" id="semantic-status">Checking...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">MCP Service</span>
+                        <span class="status-value status-disconnected" id="mcp-status">Checking...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Agent Orchestrator</span>
+                        <span class="status-value status-disconnected" id="agent-status">Checking...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Graph Stats</span>
+                        <span class="status-value" id="graph-stats">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lens-section">
+                <div class="lens-section-title">Core Domains</div>
+                <div class="keyword-grid">
+                    <div class="keyword-chip" data-keyword="llm">llm</div>
+                    <div class="keyword-chip" data-keyword="async">async</div>
+                    <div class="keyword-chip" data-keyword="flow">flow</div>
+                    <div class="keyword-chip" data-keyword="temporal">temporal</div>
+                </div>
+            </div>
+            
+            <div class="lens-section">
+                <div class="lens-section-title">Patterns</div>
+                <div class="keyword-grid">
+                    <div class="keyword-chip" data-keyword="cascade">cascade</div>
+                    <div class="keyword-chip" data-keyword="entropy">entropy</div>
+                    <div class="keyword-chip" data-keyword="fold">fold</div>
+                    <div class="keyword-chip" data-keyword="unfold">unfold</div>
+                </div>
+            </div>
+            
+            <div class="lens-section">
+                <div class="lens-section-title">Systems</div>
+                <div class="keyword-grid">
+                    <div class="keyword-chip" data-keyword="memoize">memoize</div>
+                    <div class="keyword-chip" data-keyword="transduce">transduce</div>
+                    <div class="keyword-chip" data-keyword="recursive">recursive</div>
+                    <div class="keyword-chip" data-keyword="emergence">emergence</div>
+                </div>
+            </div>
+            
+            <div class="filter-expression" id="filter-expression">
+                <span id="filter-text">∅</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture panel -->
+    <div class="architecture-panel" id="architecture-panel">
+        <div class="arch-header">
+            <div class="arch-title">System Architecture</div>
+            <div class="arch-subtitle">Void Shrine integrated services</div>
+        </div>
+        <div class="arch-content">
+            <div class="layer-item" data-layer="semantic-graph">
+                <div class="layer-name">Semantic Graph Engine</div>
+                <div class="layer-stats">
+                    <span class="layer-stat" id="semantic-nodes">0 nodes</span>
+                    <span class="layer-stat" id="semantic-edges">0 edges</span>
+                    <span class="layer-stat" id="semantic-uptime">—</span>
+                </div>
+            </div>
+
+            <div class="layer-item" data-layer="mcp-service">
+                <div class="layer-name">MCP Service</div>
+                <div class="layer-stats">
+                    <span class="layer-stat" id="mcp-requests">0 requests</span>
+                    <span class="layer-stat" id="mcp-latency">—</span>
+                    <span class="layer-stat" id="mcp-uptime">—</span>
+                </div>
+            </div>
+
+            <div class="layer-item" data-layer="agent-orchestrator">
+                <div class="layer-name">Agent Orchestrator</div>
+                <div class="layer-stats">
+                    <span class="layer-stat" id="agent-count">8 agents</span>
+                    <span class="layer-stat" id="agent-coordination">—</span>
+                    <span class="layer-stat" id="agent-uptime">—</span>
+                </div>
+            </div>
+
+            <div class="layer-item active" data-layer="integration">
+                <div class="layer-name">Integration Layer</div>
+                <div class="layer-stats">
+                    <span class="layer-stat" id="integration-health">—</span>
+                    <span class="layer-stat" id="integration-throughput">—</span>
+                    <span class="layer-stat" id="integration-latency">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info overlay -->
+    <div class="info-overlay" id="info-overlay">
+        <div class="info-title" id="info-title">—</div>
+        <div class="info-subtitle" id="info-subtitle">—</div>
+        <div class="info-stats">
+            <div class="info-stat">
+                <span class="info-stat-label">Service Type</span>
+                <span class="info-stat-value" id="info-service-type">—</span>
+            </div>
+            <div class="info-stat">
+                <span class="info-stat-label">Status</span>
+                <span class="info-stat-value" id="info-status">—</span>
+            </div>
+            <div class="info-stat">
+                <span class="info-stat-label">Endpoint</span>
+                <span class="info-stat-value" id="info-endpoint">—</span>
+            </div>
+            <div class="info-stat">
+                <span class="info-stat-label">Last Check</span>
+                <span class="info-stat-value" id="info-last-check">—</span>
+            </div>
+            <div class="info-stat">
+                <span class="info-stat-label">Response Time</span>
+                <span class="info-stat-value" id="info-response-time">—</span>
+            </div>
+            <div class="info-stat">
+                <span class="info-stat-label">Health Score</span>
+                <span class="info-stat-value" id="info-health-score">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command palette -->
+    <div class="command-palette" id="command-palette">
+        <input type="text" class="command-input" id="command-input" placeholder="Type a command or search...">
+        <div class="command-results" id="command-results"></div>
+    </div>
+
+    <script>
+        // Enhanced Predict-O-Matic Integration Explorer
+        class PredictOMaticIntegrationExplorer {
+            constructor() {
+                this.canvas = document.getElementById('main-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Viewport
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    zoom: 1,
+                    targetZoom: 1,
+                    targetX: 0,
+                    targetY: 0
+                };
+                
+                // Interaction state
+                this.mode = 'explore';
+                this.isDragging = false;
+                this.dragStart = {x: 0, y: 0};
+                this.hoveredNode = null;
+                this.selectedNodes = new Set();
+                this.activeFilters = new Set();
+                
+                // Backend integration
+                this.services = new Map([
+                    ['semantic-graph', {
+                        name: 'Semantic Graph Engine',
+                        endpoint: 'http://localhost:3032/api/graph/',
+                        status: 'unknown',
+                        lastCheck: null,
+                        responseTime: null,
+                        data: null
+                    }],
+                    ['mcp-service', {
+                        name: 'MCP Service',
+                        endpoint: 'http://localhost:3030/api/',
+                        status: 'unknown',
+                        lastCheck: null,
+                        responseTime: null,
+                        data: null
+                    }],
+                    ['agent-orchestrator', {
+                        name: 'Agent Orchestrator',
+                        endpoint: '/agents.html',
+                        status: 'unknown',
+                        lastCheck: null,
+                        responseTime: null,
+                        data: null
+                    }]
+                ]);
+                
+                // Graph data
+                this.nodes = [];
+                this.edges = [];
+                
+                // Animation
+                this.animationFrame = null;
+                this.time = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupCanvas();
+                this.generateServiceGraph();
+                this.setupEventListeners();
+                this.startHealthChecking();
+                this.animate();
+            }
+            
+            setupCanvas() {
+                const resize = () => {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                };
+                resize();
+                window.addEventListener('resize', resize);
+            }
+            
+            generateServiceGraph() {
+                // Create nodes for each service and their components
+                const nodeData = [
+                    // Semantic Graph Engine
+                    {id: 'semantic-api', label: 'Graph API', x: 200, y: 200, service: 'semantic-graph', type: 'api', keywords: ['graph', 'api', 'rest']},
+                    {id: 'semantic-engine', label: 'Graph Engine', x: 200, y: 300, service: 'semantic-graph', type: 'core', keywords: ['graph', 'engine', 'semantic']},
+                    {id: 'semantic-db', label: 'SQLite Store', x: 100, y: 350, service: 'semantic-graph', type: 'storage', keywords: ['database', 'sqlite', 'persistence']},
+                    
+                    // MCP Service  
+                    {id: 'mcp-api', label: 'MCP API', x: 500, y: 200, service: 'mcp-service', type: 'api', keywords: ['mcp', 'api', 'llm']},
+                    {id: 'mcp-rag', label: 'RAG Engine', x: 400, y: 300, service: 'mcp-service', type: 'ai', keywords: ['rag', 'llm', 'context']},
+                    {id: 'mcp-chaos', label: 'Chaos Engine', x: 600, y: 300, service: 'mcp-service', type: 'chaos', keywords: ['chaos', 'testing', 'reliability']},
+                    {id: 'mcp-moral', label: 'Moral Center', x: 500, y: 400, service: 'mcp-service', type: 'ethics', keywords: ['ethics', 'care', 'moral']},
+                    
+                    // Agent Orchestrator
+                    {id: 'agent-ui', label: 'Orchestrator UI', x: 800, y: 200, service: 'agent-orchestrator', type: 'ui', keywords: ['ui', 'orchestration', 'agents']},
+                    {id: 'agent-tactical', label: 'Tactical Agent', x: 700, y: 300, service: 'agent-orchestrator', type: 'agent', keywords: ['tactical', 'llm', 'strategy']},
+                    {id: 'agent-creative', label: 'Creative Agent', x: 900, y: 300, service: 'agent-orchestrator', type: 'agent', keywords: ['creative', 'llm', 'innovation']},
+                    {id: 'agent-memory', label: 'Memory System', x: 800, y: 400, service: 'agent-orchestrator', type: 'memory', keywords: ['memory', 'context', 'state']},
+                    
+                    // Integration Layer
+                    {id: 'integration-hub', label: 'Integration Hub', x: 500, y: 100, service: 'integration', type: 'integration', keywords: ['integration', 'hub', 'coordinator']},
+                    {id: 'websocket-bridge', label: 'WebSocket Bridge', x: 350, y: 50, service: 'integration', type: 'bridge', keywords: ['websocket', 'realtime', 'bridge']},
+                    {id: 'api-gateway', label: 'API Gateway', x: 650, y: 50, service: 'integration', type: 'gateway', keywords: ['api', 'gateway', 'routing']}
+                ];
+                
+                // Center the graph
+                const centerX = this.canvas.width / 2 - 500;
+                const centerY = this.canvas.height / 2 - 250;
+                
+                this.nodes = nodeData.map(data => ({
+                    ...data,
+                    x: data.x + centerX,
+                    y: data.y + centerY,
+                    vx: 0,
+                    vy: 0,
+                    radius: 40,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    health: 0.5,
+                    lastUpdate: Date.now()
+                }));
+                
+                // Create edges based on service architecture
+                this.edges = [];
+                const connections = [
+                    // Integration layer connections
+                    ['integration-hub', 'semantic-api', 'api-call'],
+                    ['integration-hub', 'mcp-api', 'api-call'],
+                    ['integration-hub', 'agent-ui', 'ui-bridge'],
+                    ['websocket-bridge', 'semantic-engine', 'realtime'],
+                    ['api-gateway', 'mcp-api', 'routing'],
+                    
+                    // Internal service connections
+                    ['semantic-api', 'semantic-engine', 'internal'],
+                    ['semantic-engine', 'semantic-db', 'storage'],
+                    ['mcp-api', 'mcp-rag', 'internal'],
+                    ['mcp-api', 'mcp-chaos', 'internal'],
+                    ['mcp-rag', 'mcp-moral', 'pipeline'],
+                    ['agent-ui', 'agent-tactical', 'control'],
+                    ['agent-ui', 'agent-creative', 'control'],
+                    ['agent-tactical', 'agent-memory', 'state'],
+                    ['agent-creative', 'agent-memory', 'state'],
+                    
+                    // Cross-service integrations
+                    ['mcp-rag', 'semantic-engine', 'context-bridge'],
+                    ['agent-tactical', 'mcp-api', 'llm-call'],
+                    ['semantic-engine', 'agent-memory', 'knowledge-sync']
+                ];
+                
+                connections.forEach(([sourceId, targetId, type]) => {
+                    const source = this.nodes.find(n => n.id === sourceId);
+                    const target = this.nodes.find(n => n.id === targetId);
+                    if (source && target) {
+                        this.edges.push({
+                            source,
+                            target,
+                            type,
+                            strength: type === 'internal' ? 0.8 : 0.5,
+                            health: 0.5,
+                            latency: Math.random() * 100
+                        });
+                    }
+                });
+            }
+            
+            setupEventListeners() {
+                // Mouse events
+                this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', this.handleKeyDown.bind(this));
+                
+                // UI controls
+                document.querySelectorAll('.toolbar-button[data-mode]').forEach(btn => {
+                    btn.addEventListener('click', () => this.setMode(btn.dataset.mode));
+                });
+                
+                document.getElementById('architecture-toggle').addEventListener('click', () => {
+                    this.toggleArchitecturePanel();
+                });
+                
+                document.getElementById('semantic-graph-toggle').addEventListener('click', () => {
+                    this.openSemanticGraph();
+                });
+                
+                document.getElementById('mcp-toggle').addEventListener('click', () => {
+                    this.testMCPService();
+                });
+                
+                document.getElementById('agent-orchestrator-toggle').addEventListener('click', () => {
+                    this.openAgentOrchestrator();
+                });
+                
+                document.getElementById('command-palette-toggle').addEventListener('click', () => {
+                    this.toggleCommandPalette();
+                });
+                
+                // Filter chips
+                document.querySelectorAll('.keyword-chip').forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        const keyword = chip.dataset.keyword;
+                        chip.classList.toggle('active');
+                        
+                        if (this.activeFilters.has(keyword)) {
+                            this.activeFilters.delete(keyword);
+                        } else {
+                            this.activeFilters.add(keyword);
+                        }
+                        
+                        this.updateFilterExpression();
+                    });
+                });
+                
+                // Layer selection
+                document.querySelectorAll('.layer-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const layer = item.dataset.layer;
+                        this.focusOnService(layer);
+                    });
+                });
+            }
+            
+            startHealthChecking() {
+                // Check all services immediately
+                this.checkAllServices();
+                
+                // Set up periodic health checks
+                setInterval(() => {
+                    this.checkAllServices();
+                }, 10000); // Every 10 seconds
+            }
+            
+            async checkAllServices() {
+                const promises = Array.from(this.services.entries()).map(([id, service]) => 
+                    this.checkServiceHealth(id, service)
+                );
+                
+                await Promise.all(promises);
+                this.updateServiceUI();
+            }
+            
+            async checkServiceHealth(serviceId, service) {
+                const startTime = Date.now();
+                
+                try {
+                    let response;
+                    if (serviceId === 'semantic-graph') {
+                        response = await fetch(service.endpoint + 'stats', { 
+                            method: 'GET',
+                            timeout: 5000 
+                        });
+                    } else if (serviceId === 'mcp-service') {
+                        response = await fetch(service.endpoint + 'health', { 
+                            method: 'GET',
+                            timeout: 5000 
+                        });
+                    } else if (serviceId === 'agent-orchestrator') {
+                        // For agent orchestrator, we just check if the page exists
+                        response = await fetch('/agents.html', { 
+                            method: 'HEAD',
+                            timeout: 5000 
+                        });
+                    }
+                    
+                    const responseTime = Date.now() - startTime;
+                    service.responseTime = responseTime;
+                    service.lastCheck = new Date();
+                    
+                    if (response && response.ok) {
+                        service.status = 'connected';
+                        if (serviceId === 'semantic-graph') {
+                            service.data = await response.json();
+                        }
+                        
+                        // Update node health
+                        this.nodes.filter(n => n.service === serviceId).forEach(node => {
+                            node.health = 1.0;
+                            node.lastUpdate = Date.now();
+                        });
+                        
+                    } else {
+                        service.status = 'error';
+                        this.nodes.filter(n => n.service === serviceId).forEach(node => {
+                            node.health = 0.2;
+                            node.lastUpdate = Date.now();
+                        });
+                    }
+                } catch (error) {
+                    console.log(`Service ${serviceId} check failed:`, error);
+                    service.status = 'disconnected';
+                    service.responseTime = null;
+                    service.lastCheck = new Date();
+                    
+                    this.nodes.filter(n => n.service === serviceId).forEach(node => {
+                        node.health = 0.0;
+                        node.lastUpdate = Date.now();
+                    });
+                }
+            }
+            
+            updateServiceUI() {
+                // Update status indicators
+                const semanticService = this.services.get('semantic-graph');
+                const mcpService = this.services.get('mcp-service');
+                const agentService = this.services.get('agent-orchestrator');
+                
+                document.getElementById('semantic-status').textContent = semanticService.status;
+                document.getElementById('semantic-status').className = 
+                    `status-value ${semanticService.status === 'connected' ? 'status-connected' : 'status-disconnected'}`;
+                
+                document.getElementById('mcp-status').textContent = mcpService.status;
+                document.getElementById('mcp-status').className = 
+                    `status-value ${mcpService.status === 'connected' ? 'status-connected' : 'status-disconnected'}`;
+                
+                document.getElementById('agent-status').textContent = agentService.status;
+                document.getElementById('agent-status').className = 
+                    `status-value ${agentService.status === 'connected' ? 'status-connected' : 'status-disconnected'}`;
+                
+                // Update graph stats if semantic graph is connected
+                if (semanticService.status === 'connected' && semanticService.data) {
+                    const stats = `${semanticService.data.node_count}N ${semanticService.data.edge_count}E`;
+                    document.getElementById('graph-stats').textContent = stats;
+                } else {
+                    document.getElementById('graph-stats').textContent = '—';
+                }
+                
+                // Update architecture panel
+                if (semanticService.data) {
+                    document.getElementById('semantic-nodes').textContent = `${semanticService.data.node_count} nodes`;
+                    document.getElementById('semantic-edges').textContent = `${semanticService.data.edge_count} edges`;
+                }
+                
+                document.getElementById('semantic-uptime').textContent = 
+                    semanticService.status === 'connected' ? 'Online' : 'Offline';
+                document.getElementById('mcp-uptime').textContent = 
+                    mcpService.status === 'connected' ? 'Online' : 'Offline';
+                document.getElementById('agent-uptime').textContent = 
+                    agentService.status === 'connected' ? 'Online' : 'Offline';
+            }
+            
+            draw() {
+                // Clear canvas with gradient background
+                const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                gradient.addColorStop(0, 'hsl(200, 25%, 10%)');
+                gradient.addColorStop(1, 'hsl(200, 30%, 8%)');
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Update camera smoothly
+                const cameraSpeed = 0.1;
+                this.camera.x += (this.camera.targetX - this.camera.x) * cameraSpeed;
+                this.camera.y += (this.camera.targetY - this.camera.y) * cameraSpeed;
+                this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * cameraSpeed;
+                
+                // Save context and apply camera transform
+                this.ctx.save();
+                this.ctx.translate(this.camera.x, this.camera.y);
+                this.ctx.scale(this.camera.zoom, this.camera.zoom);
+                
+                // Draw edges
+                this.edges.forEach(edge => {
+                    // Check if edge should be visible based on filters
+                    let visible = this.activeFilters.size === 0;
+                    if (!visible && edge.source.keywords && edge.target.keywords) {
+                        visible = edge.source.keywords.some(k => this.activeFilters.has(k)) ||
+                                 edge.target.keywords.some(k => this.activeFilters.has(k));
+                    }
+                    
+                    if (visible) {
+                        this.ctx.globalAlpha = this.selectedNodes.has(edge.source) || 
+                                              this.selectedNodes.has(edge.target) ? 0.8 : 0.4;
+                        
+                        // Edge styling based on type and health
+                        const healthColor = edge.health > 0.7 ? 'hsl(150, 80%, 50%)' : 
+                                           edge.health > 0.3 ? 'hsl(45, 100%, 60%)' : 
+                                           'hsl(0, 80%, 50%)';
+                        
+                        this.ctx.strokeStyle = healthColor;
+                        this.ctx.lineWidth = edge.type === 'internal' ? 3 : 2;
+                        
+                        if (edge.type === 'realtime') {
+                            this.ctx.setLineDash([5, 5]);
+                        } else {
+                            this.ctx.setLineDash([]);
+                        }
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(edge.source.x, edge.source.y);
+                        this.ctx.lineTo(edge.target.x, edge.target.y);
+                        this.ctx.stroke();
+                        
+                        // Latency indicator
+                        if (edge.latency && edge.latency > 50) {
+                            const midX = (edge.source.x + edge.target.x) / 2;
+                            const midY = (edge.source.y + edge.target.y) / 2;
+                            
+                            this.ctx.fillStyle = 'hsl(0, 80%, 60%)';
+                            this.ctx.font = '10px Inter';
+                            this.ctx.textAlign = 'center';
+                            this.ctx.fillText(`${edge.latency.toFixed(0)}ms`, midX, midY);
+                        }
+                    }
+                });
+                
+                this.ctx.setLineDash([]);
+                
+                // Draw nodes
+                this.nodes.forEach(node => {
+                    // Check filter visibility
+                    let visible = this.activeFilters.size === 0;
+                    if (!visible && node.keywords) {
+                        visible = node.keywords.some(k => this.activeFilters.has(k));
+                    }
+                    
+                    this.ctx.globalAlpha = visible ? 1 : 0.3;
+                    
+                    // Health-based pulsing
+                    const healthPulse = Math.sin(this.time * 0.005) * node.health * 0.1 + 1;
+                    const radius = node.radius * (this.hoveredNode === node ? 1.2 : 1) * 
+                                  (this.selectedNodes.has(node) ? 1.1 : 1) * healthPulse;
+                    
+                    // Node background with service-specific colors
+                    const serviceColors = {
+                        'semantic-graph': {hue: 180, name: 'Semantic Graph'},
+                        'mcp-service': {hue: 270, name: 'MCP Service'},
+                        'agent-orchestrator': {hue: 30, name: 'Agent Orchestrator'},
+                        'integration': {hue: 150, name: 'Integration Layer'}
+                    };
+                    
+                    const serviceInfo = serviceColors[node.service] || {hue: 200, name: 'Unknown'};
+                    const hue = serviceInfo.hue;
+                    
+                    // Health-based gradient
+                    const gradient = this.ctx.createRadialGradient(
+                        node.x, node.y, 0,
+                        node.x, node.y, radius
+                    );
+                    
+                    const healthAlpha = node.health;
+                    gradient.addColorStop(0, `hsla(${hue}, 100%, 60%, ${0.6 * healthAlpha})`);
+                    gradient.addColorStop(1, `hsla(${hue}, 100%, 30%, ${0.2 * healthAlpha})`);
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // Node border with health indication
+                    const borderColor = node.health > 0.7 ? `hsl(${hue}, 100%, 50%)` : 
+                                       node.health > 0.3 ? `hsl(45, 100%, 60%)` : 
+                                       `hsl(0, 80%, 50%)`;
+                    
+                    this.ctx.strokeStyle = borderColor;
+                    this.ctx.lineWidth = this.selectedNodes.has(node) ? 4 : 2;
+                    this.ctx.stroke();
+                    
+                    // Health indicator arc
+                    if (node.health < 1.0) {
+                        const healthRadius = radius + 6;
+                        const healthAngle = node.health * Math.PI * 2 - Math.PI / 2;
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(node.x, node.y, healthRadius, -Math.PI / 2, healthAngle);
+                        this.ctx.strokeStyle = borderColor;
+                        this.ctx.lineWidth = 3;
+                        this.ctx.stroke();
+                    }
+                    
+                    // Type indicator
+                    const typeIndicators = {
+                        'api': '🌐',
+                        'core': '⚙️',
+                        'storage': '🗄️',
+                        'ai': '🧠',
+                        'chaos': '🌪️',
+                        'ethics': '🧭',
+                        'ui': '🖥️',
+                        'agent': '🤖',
+                        'memory': '🧠',
+                        'integration': '🔗',
+                        'bridge': '🌉',
+                        'gateway': '🚪'
+                    };
+                    
+                    const typeIcon = typeIndicators[node.type] || '⚫';
+                    this.ctx.font = '16px Inter';
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(typeIcon, node.x, node.y - 5);
+                    
+                    // Node label
+                    this.ctx.fillStyle = visible ? 'hsl(200, 20%, 93%)' : 'hsl(200, 20%, 60%)';
+                    this.ctx.font = this.selectedNodes.has(node) ? 'bold 12px Inter' : '12px Inter';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(node.label, node.x, node.y + 18);
+                    
+                    // Service indicator
+                    if (node.service) {
+                        this.ctx.font = '9px Inter';
+                        this.ctx.fillStyle = 'hsla(200, 20%, 80%, 0.6)';
+                        this.ctx.fillText(serviceInfo.name, node.x, node.y + 32);
+                    }
+                });
+                
+                this.ctx.restore();
+            }
+            
+            animate() {
+                this.time++;
+                this.draw();
+                this.animationFrame = requestAnimationFrame(() => this.animate());
+            }
+            
+            // UI Event Handlers
+            handleMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const worldPos = this.screenToWorld(x, y);
+                const clickedNode = this.getNodeAt(worldPos.x, worldPos.y);
+                
+                if (clickedNode) {
+                    if (this.mode === 'explore') {
+                        this.selectNode(clickedNode);
+                    } else if (this.mode === 'connect') {
+                        this.testNodeConnection(clickedNode);
+                    } else if (this.mode === 'focus') {
+                        this.focusOnNode(clickedNode);
+                    }
+                } else {
+                    this.isDragging = true;
+                    this.dragStart = {x: e.clientX, y: e.clientY};
+                    this.canvas.style.cursor = 'grabbing';
+                }
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (this.isDragging) {
+                    const dx = e.clientX - this.dragStart.x;
+                    const dy = e.clientY - this.dragStart.y;
+                    
+                    this.camera.targetX += dx / this.camera.zoom;
+                    this.camera.targetY += dy / this.camera.zoom;
+                    
+                    this.dragStart = {x: e.clientX, y: e.clientY};
+                } else {
+                    const worldPos = this.screenToWorld(x, y);
+                    const hoveredNode = this.getNodeAt(worldPos.x, worldPos.y);
+                    
+                    if (hoveredNode !== this.hoveredNode) {
+                        this.hoveredNode = hoveredNode;
+                        this.updateInfoOverlay(hoveredNode);
+                        this.canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+                    }
+                }
+            }
+            
+            handleMouseUp(e) {
+                this.isDragging = false;
+                this.canvas.style.cursor = this.hoveredNode ? 'pointer' : 'grab';
+            }
+            
+            handleWheel(e) {
+                e.preventDefault();
+                
+                const delta = -e.deltaY * 0.001;
+                const newZoom = Math.max(0.5, Math.min(3, this.camera.targetZoom + delta));
+                
+                // Zoom towards mouse position
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const worldPos = this.screenToWorld(x, y);
+                
+                const zoomRatio = newZoom / this.camera.targetZoom;
+                this.camera.targetX = worldPos.x - (worldPos.x - this.camera.targetX) * zoomRatio;
+                this.camera.targetY = worldPos.y - (worldPos.y - this.camera.targetY) * zoomRatio;
+                this.camera.targetZoom = newZoom;
+            }
+            
+            handleKeyDown(e) {
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    this.resetCamera();
+                } else if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    this.toggleCommandPalette();
+                }
+            }
+            
+            // Service Integration Methods
+            openSemanticGraph() {
+                window.open('/semantic_graph_ui.html', '_blank');
+            }
+            
+            async testMCPService() {
+                const mcpService = this.services.get('mcp-service');
+                try {
+                    const response = await fetch(mcpService.endpoint + 'health');
+                    if (response.ok) {
+                        alert('MCP Service is responding! ✅');
+                    } else {
+                        alert('MCP Service returned error: ' + response.status);
+                    }
+                } catch (error) {
+                    alert('MCP Service is not accessible: ' + error.message);
+                }
+            }
+            
+            openAgentOrchestrator() {
+                window.open('/agents.html', '_blank');
+            }
+            
+            // Utility Methods
+            setMode(mode) {
+                this.mode = mode;
+                document.querySelectorAll('.toolbar-button[data-mode]').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === mode);
+                });
+            }
+            
+            selectNode(node) {
+                this.selectedNodes.clear();
+                this.selectedNodes.add(node);
+                this.updateInfoOverlay(node);
+            }
+            
+            testNodeConnection(node) {
+                const service = this.services.get(node.service);
+                if (service) {
+                    this.checkServiceHealth(node.service, service);
+                }
+            }
+            
+            focusOnNode(node) {
+                this.selectedNodes.clear();
+                this.selectedNodes.add(node);
+                
+                // Smooth camera pan to node
+                this.camera.targetX = this.canvas.width / 2 - node.x * this.camera.targetZoom;
+                this.camera.targetY = this.canvas.height / 2 - node.y * this.camera.targetZoom;
+                this.camera.targetZoom = 1.5;
+            }
+            
+            focusOnService(serviceName) {
+                // Highlight all nodes in the specified service
+                this.selectedNodes.clear();
+                this.nodes.forEach(node => {
+                    if (node.service === serviceName) {
+                        this.selectedNodes.add(node);
+                    }
+                });
+                
+                // Update layer selection UI
+                document.querySelectorAll('.layer-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.layer === serviceName);
+                });
+                
+                // Focus camera on service
+                const serviceNodes = this.nodes.filter(node => node.service === serviceName);
+                if (serviceNodes.length > 0) {
+                    const centerX = serviceNodes.reduce((sum, node) => sum + node.x, 0) / serviceNodes.length;
+                    const centerY = serviceNodes.reduce((sum, node) => sum + node.y, 0) / serviceNodes.length;
+                    
+                    this.camera.targetX = this.canvas.width / 2 - centerX * this.camera.targetZoom;
+                    this.camera.targetY = this.canvas.height / 2 - centerY * this.camera.targetZoom;
+                    this.camera.targetZoom = 1.2;
+                }
+            }
+            
+            resetCamera() {
+                this.camera.targetX = 0;
+                this.camera.targetY = 0;
+                this.camera.targetZoom = 1;
+            }
+            
+            updateFilterExpression() {
+                const expression = this.activeFilters.size > 0 
+                    ? `(${Array.from(this.activeFilters).map(k => `:${k}`).join(' ')})`
+                    : '∅';
+                document.getElementById('filter-text').textContent = expression;
+            }
+            
+            updateInfoOverlay(node) {
+                const overlay = document.getElementById('info-overlay');
+                
+                if (node) {
+                    const service = this.services.get(node.service);
+                    
+                    document.getElementById('info-title').textContent = node.label;
+                    document.getElementById('info-subtitle').textContent = `${node.id} • ${node.type}`;
+                    document.getElementById('info-service-type').textContent = node.service || 'Unknown';
+                    document.getElementById('info-status').textContent = 
+                        service ? service.status : 'Unknown';
+                    document.getElementById('info-endpoint').textContent = 
+                        service ? service.endpoint : '—';
+                    document.getElementById('info-last-check').textContent = 
+                        service && service.lastCheck ? service.lastCheck.toLocaleTimeString() : '—';
+                    document.getElementById('info-response-time').textContent = 
+                        service && service.responseTime ? `${service.responseTime}ms` : '—';
+                    document.getElementById('info-health-score').textContent = 
+                        `${Math.round(node.health * 100)}%`;
+                    
+                    overlay.classList.add('visible');
+                } else {
+                    overlay.classList.remove('visible');
+                }
+            }
+            
+            toggleArchitecturePanel() {
+                const panel = document.getElementById('architecture-panel');
+                panel.classList.toggle('visible');
+                document.getElementById('architecture-toggle').classList.toggle('active');
+            }
+            
+            toggleCommandPalette() {
+                const palette = document.getElementById('command-palette');
+                const input = document.getElementById('command-input');
+                
+                palette.classList.toggle('visible');
+                if (palette.classList.contains('visible')) {
+                    input.focus();
+                    input.value = '';
+                }
+            }
+            
+            getNodeAt(x, y) {
+                for (const node of this.nodes) {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < node.radius) {
+                        return node;
+                    }
+                }
+                return null;
+            }
+            
+            screenToWorld(x, y) {
+                return {
+                    x: (x - this.camera.x) / this.camera.zoom,
+                    y: (y - this.camera.y) / this.camera.zoom
+                };
+            }
+        }
+        
+        // Initialize the integration explorer
+        const explorer = new PredictOMaticIntegrationExplorer();
+        
+        // Enhanced command palette functionality
+        const commandPalette = document.getElementById('command-palette');
+        const commandInput = document.getElementById('command-input');
+        const commandResults = document.getElementById('command-results');
+        
+        const commands = [
+            {
+                name: 'Open Semantic Graph',
+                description: 'Launch semantic graph explorer interface',
+                icon: '🌀',
+                action: () => explorer.openSemanticGraph()
+            },
+            {
+                name: 'Open Agent Orchestrator',
+                description: 'Launch multi-LLM agent orchestrator',
+                icon: '🎵',
+                action: () => explorer.openAgentOrchestrator()
+            },
+            {
+                name: 'Test MCP Service',
+                description: 'Check MCP service health and endpoints',
+                icon: '🔧',
+                action: () => explorer.testMCPService()
+            },
+            {
+                name: 'Check All Services',
+                description: 'Run health check on all backend services',
+                icon: '🏥',
+                action: () => explorer.checkAllServices()
+            },
+            {
+                name: 'Focus on Service',
+                description: 'Navigate to specific service architecture',
+                icon: '🎯',
+                action: (service) => explorer.focusOnService(service || 'semantic-graph')
+            },
+            {
+                name: 'Reset View',
+                description: 'Return to overview',
+                icon: '🏠',
+                action: () => explorer.resetCamera()
+            }
+        ];
+        
+        commandInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = commands.filter(cmd => 
+                cmd.name.toLowerCase().includes(query) ||
+                cmd.description.toLowerCase().includes(query)
+            );
+            
+            commandResults.innerHTML = filtered.map(cmd => `
+                <div class="command-item" data-command="${cmd.name}">
+                    <div class="command-icon">${cmd.icon}</div>
+                    <div class="command-text">
+                        <div class="command-name">${cmd.name}</div>
+                        <div class="command-description">${cmd.description}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            commandResults.querySelectorAll('.command-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const cmdName = item.dataset.command;
+                    const cmd = commands.find(c => c.name === cmdName);
+                    if (cmd) {
+                        cmd.action();
+                        commandPalette.classList.remove('visible');
+                    }
+                });
+            });
+        });
+        
+        // Initial command population
+        commandInput.dispatchEvent(new Event('input'));
+    </script>
+</body>
+</html>
