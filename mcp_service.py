@@ -173,7 +173,7 @@ class VoidShrineMCP:
     def apply_chaos(self, agent_id: str) -> bool:
         """Apply chaos engineering with probability"""
         if self.chaos_enabled and random.random() < self.chaos_intensity:
-            delay = random.uniform(0.1, 0.5)
+            delay = random.uniform(0.01, 0.05)  # Reduced delay for responsiveness
             time.sleep(delay)
             return True
         return False

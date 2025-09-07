@@ -1030,10 +1030,10 @@
                 // Check all services immediately
                 this.checkAllServices();
                 
-                // Set up periodic health checks
+                // Set up periodic health checks - more frequent for responsiveness
                 setInterval(() => {
                     this.checkAllServices();
-                }, 10000); // Every 10 seconds
+                }, 5000); // Every 5 seconds
             }
             
             async checkAllServices() {
@@ -1053,18 +1053,18 @@
                     if (serviceId === 'semantic-graph') {
                         response = await fetch(service.endpoint + 'stats', { 
                             method: 'GET',
-                            timeout: 5000 
+                            timeout: 2000  // Reduced timeout for faster feedback
                         });
                     } else if (serviceId === 'mcp-service') {
                         response = await fetch(service.endpoint + 'health', { 
                             method: 'GET',
-                            timeout: 5000 
+                            timeout: 2000  // Reduced timeout for faster feedback
                         });
                     } else if (serviceId === 'agent-orchestrator') {
                         // For agent orchestrator, we just check if the page exists
                         response = await fetch('/agents.html', { 
                             method: 'HEAD',
-                            timeout: 5000 
+                            timeout: 1000  // Fastest timeout for local file check
                         });
                     }
                     

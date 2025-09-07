@@ -211,9 +211,10 @@ class SemanticGraphEngine:
         queue = deque([(start_node_id, 0)])
         traversal_path = []
         
-        # Simulate network delay for traversal initiation
-        delay = self.delay_profiles[DelayType.NETWORK].sample_delay()
-        time.sleep(delay / 1000)
+        # Minimal delay for production - keep responsive
+        delay = min(50, self.delay_profiles[DelayType.NETWORK].sample_delay())
+        if delay > 10:  # Only sleep for significant delays
+            time.sleep(delay / 10000)  # Reduced by 100x
         
         while queue and len(traversal_path) < 50:  # Limit results
             current_id, depth = queue.popleft()
@@ -236,10 +237,10 @@ class SemanticGraphEngine:
                 if edge.source_id == current_id and edge.target_id not in visited:
                     queue.append((edge.target_id, depth + 1))
             
-            # Simulate compute delay between nodes
-            if queue:
-                delay = self.delay_profiles[DelayType.COMPUTE].sample_delay()
-                time.sleep(delay / 1000)
+            # Minimal compute delay - keep interactive
+            if queue and len(queue) > 10:  # Only delay for large queues
+                delay = min(20, self.delay_profiles[DelayType.COMPUTE].sample_delay())
+                time.sleep(delay / 20000)  # Reduced by 50x
         
         return traversal_path
     
@@ -284,9 +285,10 @@ class SemanticGraphEngine:
                         if abs(propagated_delta) > 0.005:  # Minimum propagation threshold
                             propagation_queue.append((edge.target_id, propagated_delta, depth + 1))
                 
-                # Simulate propagation delay
-                delay = self.delay_profiles[DelayType.PROPAGATION].sample_delay()
-                time.sleep(delay / 1000)
+                # Minimal propagation delay for responsiveness
+                delay = min(10, self.delay_profiles[DelayType.PROPAGATION].sample_delay())
+                if delay > 5:  # Only sleep for significant delays
+                    time.sleep(delay / 50000)  # Reduced by 50x
         
         return changes
     
@@ -298,9 +300,10 @@ class SemanticGraphEngine:
         source_node = self.nodes[node_id]
         candidates = []
         
-        # Simulate inference delay for similarity calculation
-        delay = self.delay_profiles[DelayType.INFERENCE].sample_delay()
-        time.sleep(delay / 1000)
+        # Minimal inference delay - prioritize speed
+        delay = min(100, self.delay_profiles[DelayType.INFERENCE].sample_delay())
+        if delay > 50:  # Only sleep for significant delays
+            time.sleep(delay / 100000)  # Reduced by 100x
         
         for candidate_id, candidate_node in self.nodes.items():
             if candidate_id == node_id:

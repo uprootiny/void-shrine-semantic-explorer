@@ -510,17 +510,18 @@
             
             async loadInitialData() {
                 try {
-                    // Load nodes
-                    const nodesResponse = await fetch('http://localhost:3032/api/graph/nodes');
-                    const nodesData = await nodesResponse.json();
+                    // Load data in parallel for faster loading
+                    const [nodesResponse, edgesResponse, statsResponse] = await Promise.all([
+                        fetch('http://localhost:3032/api/graph/nodes'),
+                        fetch('http://localhost:3032/api/graph/edges'),
+                        fetch('http://localhost:3032/api/graph/stats')
+                    ]);
                     
-                    // Load edges
-                    const edgesResponse = await fetch('http://localhost:3032/api/graph/edges');
-                    const edgesData = await edgesResponse.json();
-                    
-                    // Load stats
-                    const statsResponse = await fetch('http://localhost:3032/api/graph/stats');
-                    const statsData = await statsResponse.json();
+                    const [nodesData, edgesData, statsData] = await Promise.all([
+                        nodesResponse.json(),
+                        edgesResponse.json(),
+                        statsResponse.json()
+                    ]);
                     
                     // Add nodes to graph
                     nodesData.nodes.forEach(node => this.addNodeToGraph(node));
