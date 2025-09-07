@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌀 Semantic Graph Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "controls graph stats"
+                "logs events details";
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: auto 400px 1fr;
+            gap: 10px;
+            padding: 10px;
+            height: 100vh;
+        }
+        
+        .panel {
+            background: rgba(20, 20, 40, 0.8);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            grid-area: header;
+            text-align: center;
+            background: linear-gradient(90deg, #4a0e4e, #2d1b69, #1a2980);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            grid-area: controls;
+            overflow-y: auto;
+        }
+        
+        .graph-container {
+            grid-area: graph;
+            position: relative;
+            background: radial-gradient(circle at center, #001122 0%, #000811 100%);
+            border: 2px solid #4a90e2;
+        }
+        
+        .stats {
+            grid-area: stats;
+            overflow-y: auto;
+        }
+        
+        .logs {
+            grid-area: logs;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .events {
+            grid-area: events;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .details {
+            grid-area: details;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            color: #b0b0b0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-family: inherit;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #4ecdc4 0%, #44a08d 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            border-left: 3px solid #4ecdc4;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0 4px 4px 0;
+            font-size: 12px;
+        }
+        
+        .log-error {
+            border-left-color: #ff6b6b;
+        }
+        
+        .log-success {
+            border-left-color: #51cf66;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+        
+        .stat-value {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        #graphCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        #graphCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-connected {
+            background: #51cf66;
+        }
+        
+        .status-disconnected {
+            background: #ff6b6b;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .cascade-scenario {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .entanglement-pair {
+            background: rgba(78, 205, 196, 0.1);
+            border: 1px solid #4ecdc4;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .node-details {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #555;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .delay-visualization {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .delay-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel header">
+            <div class="title">🌀 Semantic Graph Explorer</div>
+            <div class="subtitle">Cascading State Changes • Quantum Entanglement • Temporal Dynamics</div>
+            <div class="connection-status">
+                <div class="status-indicator" id="connectionStatus"></div>
+                <span id="connectionText">Connecting...</span>
+            </div>
+        </div>
+        
+        <div class="panel controls">
+            <h3>🎛️ Graph Controls</h3>
+            
+            <div class="form-group">
+                <label>Add Node</label>
+                <input type="text" id="nodeId" placeholder="Node ID">
+                <select id="nodeType">
+                    <option value="concept">Concept</option>
+                    <option value="entity">Entity</option>
+                    <option value="relation">Relation</option>
+                    <option value="process">Process</option>
+                    <option value="state">State</option>
+                    <option value="event">Event</option>
+                    <option value="temporal">Temporal</option>
+                </select>
+                <input type="text" id="nodeLabel" placeholder="Node Label">
+                <input type="number" id="activationLevel" placeholder="Activation (0-1)" step="0.1" min="0" max="1">
+                <button class="btn btn-primary" onclick="addNode()">Add Node</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Add Edge</label>
+                <input type="text" id="edgeId" placeholder="Edge ID">
+                <input type="text" id="sourceId" placeholder="Source Node ID">
+                <input type="text" id="targetId" placeholder="Target Node ID">
+                <select id="edgeType">
+                    <option value="semantic">Semantic</option>
+                    <option value="causal">Causal</option>
+                    <option value="temporal">Temporal</option>
+                    <option value="ontological">Ontological</option>
+                    <option value="entangled">Entangled</option>
+                    <option value="cascading">Cascading</option>
+                </select>
+                <input type="number" id="edgeWeight" placeholder="Weight (0-1)" step="0.1" min="0" max="1" value="1">
+                <button class="btn btn-primary" onclick="addEdge()">Add Edge</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Graph Operations</label>
+                <input type="text" id="traversalNodeId" placeholder="Start Node ID">
+                <button class="btn" onclick="startTraversal()">🔍 BFS Traversal</button>
+                <button class="btn" onclick="findEntanglementCandidates()">🔗 Find Entanglement</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Activation Propagation</label>
+                <input type="text" id="propagateNodeId" placeholder="Node ID">
+                <input type="number" id="activationDelta" placeholder="Delta (-1 to 1)" step="0.1" min="-1" max="1">
+                <button class="btn btn-primary" onclick="propagateActivation()">⚡ Propagate</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Cascade Scenarios</label>
+                <input type="text" id="cascadeNodeId" placeholder="Trigger Node ID">
+                <select id="cascadeType">
+                    <option value="activation_wave">Activation Wave</option>
+                    <option value="state_cascade">State Cascade</option>
+                    <option value="temporal_ripple">Temporal Ripple</option>
+                </select>
+                <button class="btn btn-danger" onclick="executeCascade()">🌊 Execute Cascade</button>
+            </div>
+        </div>
+        
+        <div class="panel graph-container">
+            <canvas id="graphCanvas"></canvas>
+        </div>
+        
+        <div class="panel stats">
+            <h3>📊 Graph Statistics</h3>
+            <div id="statsDisplay">
+                <div class="stat-item">
+                    <span>Nodes:</span>
+                    <span class="stat-value" id="nodeCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Edges:</span>
+                    <span class="stat-value" id="edgeCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Entangled Pairs:</span>
+                    <span class="stat-value" id="entangledPairs">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Avg Activation:</span>
+                    <span class="stat-value" id="avgActivation">0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span>State Changes:</span>
+                    <span class="stat-value" id="stateChanges">0</span>
+                </div>
+            </div>
+            
+            <h4>🔄 Active Delays</h4>
+            <div id="activeDelays"></div>
+            
+            <h4>🎯 Node Types</h4>
+            <div id="nodeTypes"></div>
+        </div>
+        
+        <div class="panel logs">
+            <h3>📝 System Logs</h3>
+            <div id="logDisplay"></div>
+        </div>
+        
+        <div class="panel events">
+            <h3>⚡ Real-time Events</h3>
+            <div id="eventDisplay"></div>
+        </div>
+        
+        <div class="panel details">
+            <h3>🔍 Selection Details</h3>
+            <div id="detailsDisplay">
+                <p>Click on a node or edge to view details</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SemanticGraphUI {
+            constructor() {
+                this.canvas = document.getElementById('graphCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.websocket = null;
+                this.nodes = new Map();
+                this.edges = new Map();
+                this.selectedNode = null;
+                this.selectedEdge = null;
+                this.camera = { x: 0, y: 0, zoom: 1 };
+                this.isDragging = false;
+                this.lastMouse = { x: 0, y: 0 };
+                this.activeDelays = new Map();
+                
+                this.initializeCanvas();
+                this.connectWebSocket();
+                this.loadInitialData();
+                
+                // Animation loop
+                this.animate();
+            }
+            
+            initializeCanvas() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Mouse events for interaction
+                this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+                this.canvas.addEventListener('wheel', (e) => this.onWheel(e));
+            }
+            
+            resizeCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * window.devicePixelRatio;
+                this.canvas.height = rect.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.canvas.style.width = rect.width + 'px';
+                this.canvas.style.height = rect.height + 'px';
+            }
+            
+            connectWebSocket() {
+                const wsUrl = 'ws://localhost:8766';
+                this.websocket = new WebSocket(wsUrl);
+                
+                this.websocket.onopen = () => {
+                    this.updateConnectionStatus(true);
+                    this.addLog('🌐 WebSocket connected', 'success');
+                };
+                
+                this.websocket.onclose = () => {
+                    this.updateConnectionStatus(false);
+                    this.addLog('🌐 WebSocket disconnected', 'error');
+                    // Attempt to reconnect
+                    setTimeout(() => this.connectWebSocket(), 3000);
+                };
+                
+                this.websocket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleWebSocketMessage(data);
+                    } catch (e) {
+                        this.addLog(`❌ WebSocket parse error: ${e.message}`, 'error');
+                    }
+                };
+                
+                this.websocket.onerror = (error) => {
+                    this.addLog(`❌ WebSocket error: ${error}`, 'error');
+                };
+            }
+            
+            handleWebSocketMessage(data) {
+                switch (data.type) {
+                    case 'initial_state':
+                        this.updateStats(data.stats);
+                        break;
+                    case 'stats_update':
+                        this.updateStats(data.stats);
+                        break;
+                    case 'node_added':
+                        this.addNodeToGraph(data.node);
+                        this.addEvent(`➕ Node added: ${data.node.label}`, 'success');
+                        break;
+                    case 'edge_added':
+                        this.addEdgeToGraph(data.edge);
+                        this.addEvent(`🔗 Edge added: ${data.edge.type}`, 'success');
+                        break;
+                    case 'traversal_complete':
+                        this.visualizeTraversal(data.path);
+                        this.addEvent(`🔍 Traversal complete: ${data.path.length} nodes`, 'info');
+                        break;
+                    case 'activation_propagated':
+                        this.visualizeActivationChanges(data.changes);
+                        this.addEvent(`⚡ Activation propagated from ${data.origin_node}`, 'info');
+                        break;
+                    case 'entanglement_candidates_found':
+                        this.displayEntanglementCandidates(data.candidates);
+                        this.addEvent(`🔗 Found ${data.candidates.length} entanglement candidates`, 'info');
+                        break;
+                    case 'entanglement_created':
+                        this.visualizeEntanglement(data.node1_id, data.node2_id);
+                        this.addEvent(`🌀 Quantum entanglement created`, 'success');
+                        break;
+                    case 'cascade_scenario_complete':
+                        this.visualizeCascadeScenario(data);
+                        this.addEvent(`🌊 Cascade scenario: ${data.total_events} events`, 'warning');
+                        break;
+                }
+            }
+            
+            updateConnectionStatus(connected) {
+                const indicator = document.getElementById('connectionStatus');
+                const text = document.getElementById('connectionText');
+                
+                if (connected) {
+                    indicator.className = 'status-indicator status-connected';
+                    text.textContent = 'Connected to Graph Engine';
+                } else {
+                    indicator.className = 'status-indicator status-disconnected';
+                    text.textContent = 'Disconnected';
+                }
+            }
+            
+            async loadInitialData() {
+                try {
+                    // Load nodes
+                    const nodesResponse = await fetch('http://localhost:3032/api/graph/nodes');
+                    const nodesData = await nodesResponse.json();
+                    
+                    // Load edges
+                    const edgesResponse = await fetch('http://localhost:3032/api/graph/edges');
+                    const edgesData = await edgesResponse.json();
+                    
+                    // Load stats
+                    const statsResponse = await fetch('http://localhost:3032/api/graph/stats');
+                    const statsData = await statsResponse.json();
+                    
+                    // Add nodes to graph
+                    nodesData.nodes.forEach(node => this.addNodeToGraph(node));
+                    edgesData.edges.forEach(edge => this.addEdgeToGraph(edge));
+                    this.updateStats(statsData);
+                    
+                    this.addLog('📊 Initial graph data loaded', 'success');
+                } catch (error) {
+                    this.addLog(`❌ Failed to load initial data: ${error.message}`, 'error');
+                }
+            }
+            
+            addNodeToGraph(nodeData) {
+                const node = {
+                    id: nodeData.id,
+                    type: nodeData.type,
+                    label: nodeData.label,
+                    properties: nodeData.properties || {},
+                    state: nodeData.state || {},
+                    activation_level: nodeData.activation_level || 0,
+                    entangled_nodes: new Set(nodeData.entangled_nodes || []),
+                    x: Math.random() * 400 + 100,
+                    y: Math.random() * 300 + 100,
+                    vx: 0,
+                    vy: 0
+                };
+                this.nodes.set(node.id, node);
+            }
+            
+            addEdgeToGraph(edgeData) {
+                const edge = {
+                    id: edgeData.id,
+                    source_id: edgeData.source_id,
+                    target_id: edgeData.target_id,
+                    type: edgeData.type,
+                    weight: edgeData.weight || 1,
+                    properties: edgeData.properties || {}
+                };
+                this.edges.set(edge.id, edge);
+            }
+            
+            updateStats(stats) {
+                document.getElementById('nodeCount').textContent = stats.node_count || 0;
+                document.getElementById('edgeCount').textContent = stats.edge_count || 0;
+                document.getElementById('entangledPairs').textContent = stats.entangled_pairs || 0;
+                document.getElementById('avgActivation').textContent = (stats.average_activation || 0).toFixed(2);
+                document.getElementById('stateChanges').textContent = stats.total_state_changes || 0;
+                
+                // Update node types breakdown
+                const nodeTypesEl = document.getElementById('nodeTypes');
+                if (stats.node_types) {
+                    nodeTypesEl.innerHTML = Object.entries(stats.node_types)
+                        .map(([type, count]) => `
+                            <div class="stat-item">
+                                <span>${type}:</span>
+                                <span class="stat-value">${count}</span>
+                            </div>
+                        `).join('');
+                }
+            }
+            
+            visualizeTraversal(path) {
+                // Highlight traversal path
+                path.forEach((step, index) => {
+                    const node = this.nodes.get(step.node_id);
+                    if (node) {
+                        node.traversalOrder = index;
+                        node.isTraversalHighlighted = true;
+                        
+                        setTimeout(() => {
+                            node.isTraversalHighlighted = false;
+                        }, 5000);
+                    }
+                });
+            }
+            
+            visualizeActivationChanges(changes) {
+                changes.forEach(change => {
+                    const node = this.nodes.get(change.node_id);
+                    if (node && change.property_path === 'activation_level') {
+                        node.activation_level = change.new_value;
+                        node.isActivationChanged = true;
+                        
+                        setTimeout(() => {
+                            node.isActivationChanged = false;
+                        }, 2000);
+                    }
+                });
+            }
+            
+            displayEntanglementCandidates(candidates) {
+                const detailsEl = document.getElementById('detailsDisplay');
+                detailsEl.innerHTML = `
+                    <h4>🔗 Entanglement Candidates</h4>
+                    ${candidates.map(candidate => `
+                        <div class="entanglement-pair">
+                            <strong>${candidate.node_id}</strong><br>
+                            Similarity: ${(candidate.similarity * 100).toFixed(1)}%<br>
+                            <button class="btn btn-primary" onclick="createEntanglement('${this.selectedNode?.id}', '${candidate.node_id}')">
+                                Create Entanglement
+                            </button>
+                        </div>
+                    `).join('')}
+                `;
+            }
+            
+            visualizeEntanglement(node1Id, node2Id) {
+                const node1 = this.nodes.get(node1Id);
+                const node2 = this.nodes.get(node2Id);
+                
+                if (node1 && node2) {
+                    node1.entangled_nodes.add(node2Id);
+                    node2.entangled_nodes.add(node1Id);
+                    
+                    node1.isEntanglementActive = true;
+                    node2.isEntanglementActive = true;
+                    
+                    setTimeout(() => {
+                        node1.isEntanglementActive = false;
+                        node2.isEntanglementActive = false;
+                    }, 3000);
+                }
+            }
+            
+            visualizeCascadeScenario(scenario) {
+                const detailsEl = document.getElementById('detailsDisplay');
+                detailsEl.innerHTML = `
+                    <div class="cascade-scenario">
+                        <h4>🌊 Cascade Scenario</h4>
+                        <p><strong>Type:</strong> ${scenario.scenario_type}</p>
+                        <p><strong>Trigger:</strong> ${scenario.trigger_node}</p>
+                        <p><strong>Events:</strong> ${scenario.total_events}</p>
+                        <p><strong>Duration:</strong> ${scenario.duration_ms.toFixed(0)}ms</p>
+                        
+                        <h5>Event Timeline:</h5>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${scenario.events.slice(0, 10).map(event => `
+                                <div class="log-entry">
+                                    <strong>${event.type}</strong> @ ${event.delay_ms.toFixed(0)}ms<br>
+                                    Node: ${event.node_id}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            animate() {
+                this.updatePhysics();
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            updatePhysics() {
+                // Simple force-directed layout
+                const nodes = Array.from(this.nodes.values());
+                const edges = Array.from(this.edges.values());
+                
+                // Reset forces
+                nodes.forEach(node => {
+                    node.vx = 0;
+                    node.vy = 0;
+                });
+                
+                // Repulsion between nodes
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const node1 = nodes[i];
+                        const node2 = nodes[j];
+                        const dx = node2.x - node1.x;
+                        const dy = node2.y - node1.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 0) {
+                            const force = 1000 / (dist * dist);
+                            const fx = (dx / dist) * force;
+                            const fy = (dy / dist) * force;
+                            
+                            node1.vx -= fx;
+                            node1.vy -= fy;
+                            node2.vx += fx;
+                            node2.vy += fy;
+                        }
+                    }
+                }
+                
+                // Attraction along edges
+                edges.forEach(edge => {
+                    const source = this.nodes.get(edge.source_id);
+                    const target = this.nodes.get(edge.target_id);
+                    
+                    if (source && target) {
+                        const dx = target.x - source.x;
+                        const dy = target.y - source.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const targetDist = 100;
+                        
+                        if (dist > 0) {
+                            const force = (dist - targetDist) * 0.1 * edge.weight;
+                            const fx = (dx / dist) * force;
+                            const fy = (dy / dist) * force;
+                            
+                            source.vx += fx;
+                            source.vy += fy;
+                            target.vx -= fx;
+                            target.vy -= fy;
+                        }
+                    }
+                });
+                
+                // Apply forces and damping
+                nodes.forEach(node => {
+                    node.vx *= 0.8; // Damping
+                    node.vy *= 0.8;
+                    node.x += node.vx;
+                    node.y += node.vy;
+                    
+                    // Keep nodes in bounds
+                    node.x = Math.max(30, Math.min(this.canvas.width / window.devicePixelRatio - 30, node.x));
+                    node.y = Math.max(30, Math.min(this.canvas.height / window.devicePixelRatio - 30, node.y));
+                });
+            }
+            
+            render() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.ctx.clearRect(0, 0, rect.width, rect.height);
+                
+                this.ctx.save();
+                this.ctx.translate(this.camera.x, this.camera.y);
+                this.ctx.scale(this.camera.zoom, this.camera.zoom);
+                
+                // Render edges first
+                this.edges.forEach(edge => this.renderEdge(edge));
+                
+                // Render nodes
+                this.nodes.forEach(node => this.renderNode(node));
+                
+                this.ctx.restore();
+            }
+            
+            renderEdge(edge) {
+                const source = this.nodes.get(edge.source_id);
+                const target = this.nodes.get(edge.target_id);
+                
+                if (!source || !target) return;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(source.x, source.y);
+                this.ctx.lineTo(target.x, target.y);
+                
+                // Edge color based on type
+                const edgeColors = {
+                    semantic: '#4ecdc4',
+                    causal: '#ff6b6b',
+                    temporal: '#feca57',
+                    ontological: '#9b59b6',
+                    entangled: '#e74c3c',
+                    cascading: '#f39c12'
+                };
+                
+                this.ctx.strokeStyle = edgeColors[edge.type] || '#666';
+                this.ctx.lineWidth = Math.max(1, edge.weight * 3);
+                
+                if (edge.type === 'entangled') {
+                    this.ctx.setLineDash([5, 5]);
+                } else {
+                    this.ctx.setLineDash([]);
+                }
+                
+                this.ctx.stroke();
+                
+                // Arrow head
+                const angle = Math.atan2(target.y - source.y, target.x - source.x);
+                const arrowLength = 10;
+                const arrowAngle = 0.5;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(
+                    target.x - arrowLength * Math.cos(angle - arrowAngle),
+                    target.y - arrowLength * Math.sin(angle - arrowAngle)
+                );
+                this.ctx.lineTo(target.x, target.y);
+                this.ctx.lineTo(
+                    target.x - arrowLength * Math.cos(angle + arrowAngle),
+                    target.y - arrowLength * Math.sin(angle + arrowAngle)
+                );
+                this.ctx.stroke();
+            }
+            
+            renderNode(node) {
+                const radius = 20 + node.activation_level * 15;
+                
+                // Node background
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+                
+                // Node color based on type
+                const nodeColors = {
+                    concept: '#e74c3c',
+                    entity: '#3498db',
+                    relation: '#2ecc71',
+                    process: '#f39c12',
+                    state: '#9b59b6',
+                    event: '#e67e22',
+                    temporal: '#1abc9c'
+                };
+                
+                let fillColor = nodeColors[node.type] || '#95a5a6';
+                
+                // Special highlighting
+                if (node.isTraversalHighlighted) {
+                    fillColor = '#fff';
+                    this.ctx.shadowColor = '#4ecdc4';
+                    this.ctx.shadowBlur = 20;
+                }
+                
+                if (node.isActivationChanged) {
+                    this.ctx.shadowColor = '#ff6b6b';
+                    this.ctx.shadowBlur = 15;
+                }
+                
+                if (node.isEntanglementActive) {
+                    this.ctx.shadowColor = '#e74c3c';
+                    this.ctx.shadowBlur = 25;
+                }
+                
+                this.ctx.fillStyle = fillColor;
+                this.ctx.fill();
+                
+                // Reset shadow
+                this.ctx.shadowBlur = 0;
+                
+                // Node border
+                this.ctx.strokeStyle = node === this.selectedNode ? '#fff' : '#333';
+                this.ctx.lineWidth = node === this.selectedNode ? 3 : 1;
+                this.ctx.stroke();
+                
+                // Activation level indicator
+                if (node.activation_level > 0) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, radius - 3, 0, Math.PI * 2 * node.activation_level);
+                    this.ctx.strokeStyle = '#4ecdc4';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                }
+                
+                // Node label
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '12px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(node.label, node.x, node.y + 4);
+                
+                // Entanglement indicators
+                if (node.entangled_nodes.size > 0) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x + radius - 5, node.y - radius + 5, 5, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#e74c3c';
+                    this.ctx.fill();
+                }
+                
+                // Traversal order
+                if (node.traversalOrder !== undefined) {
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.font = 'bold 10px Courier New';
+                    this.ctx.fillText((node.traversalOrder + 1).toString(), node.x - radius + 5, node.y - radius + 15);
+                }
+            }
+            
+            onMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.camera.x) / this.camera.zoom;
+                const y = (e.clientY - rect.top - this.camera.y) / this.camera.zoom;
+                
+                // Check if clicking on a node
+                for (const node of this.nodes.values()) {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    const radius = 20 + node.activation_level * 15;
+                    
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        this.selectedNode = node;
+                        this.showNodeDetails(node);
+                        return;
+                    }
+                }
+                
+                // Start camera dragging
+                this.isDragging = true;
+                this.lastMouse = { x: e.clientX, y: e.clientY };
+            }
+            
+            onMouseMove(e) {
+                if (this.isDragging) {
+                    const dx = e.clientX - this.lastMouse.x;
+                    const dy = e.clientY - this.lastMouse.y;
+                    
+                    this.camera.x += dx;
+                    this.camera.y += dy;
+                    
+                    this.lastMouse = { x: e.clientX, y: e.clientY };
+                }
+            }
+            
+            onMouseUp(e) {
+                this.isDragging = false;
+            }
+            
+            onWheel(e) {
+                e.preventDefault();
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                this.camera.zoom *= zoomFactor;
+                this.camera.zoom = Math.max(0.1, Math.min(3, this.camera.zoom));
+            }
+            
+            showNodeDetails(node) {
+                const detailsEl = document.getElementById('detailsDisplay');
+                detailsEl.innerHTML = `
+                    <div class="node-details">
+                        <h4>🎯 ${node.label}</h4>
+                        <p><strong>ID:</strong> ${node.id}</p>
+                        <p><strong>Type:</strong> ${node.type}</p>
+                        <p><strong>Activation:</strong> ${(node.activation_level * 100).toFixed(1)}%</p>
+                        
+                        <div class="delay-visualization">
+                            <div class="delay-bar" style="width: ${node.activation_level * 100}%"></div>
+                        </div>
+                        
+                        <p><strong>Entangled:</strong> ${node.entangled_nodes.size} nodes</p>
+                        
+                        <h5>Properties:</h5>
+                        <pre>${JSON.stringify(node.properties, null, 2)}</pre>
+                        
+                        <h5>State:</h5>
+                        <pre>${JSON.stringify(node.state, null, 2)}</pre>
+                        
+                        <button class="btn" onclick="graphUI.findEntanglementCandidatesFor('${node.id}')">
+                            🔗 Find Entanglement
+                        </button>
+                        <button class="btn" onclick="graphUI.startTraversalFrom('${node.id}')">
+                            🔍 Start Traversal
+                        </button>
+                    </div>
+                `;
+            }
+            
+            addLog(message, type = 'info') {
+                const logEl = document.getElementById('logDisplay');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+                
+                logEl.insertBefore(entry, logEl.firstChild);
+                
+                // Keep only last 50 entries
+                while (logEl.children.length > 50) {
+                    logEl.removeChild(logEl.lastChild);
+                }
+            }
+            
+            addEvent(message, type = 'info') {
+                const eventEl = document.getElementById('eventDisplay');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+                
+                eventEl.insertBefore(entry, eventEl.firstChild);
+                
+                // Keep only last 30 entries
+                while (eventEl.children.length > 30) {
+                    eventEl.removeChild(eventEl.lastChild);
+                }
+            }
+            
+            async findEntanglementCandidatesFor(nodeId) {
+                try {
+                    const response = await fetch(`http://localhost:3032/api/graph/entanglement/${nodeId}?threshold=0.8`);
+                    const data = await response.json();
+                    this.displayEntanglementCandidates(data.candidates);
+                } catch (error) {
+                    this.addLog(`❌ Failed to find entanglement candidates: ${error.message}`, 'error');
+                }
+            }
+            
+            async startTraversalFrom(nodeId) {
+                try {
+                    const response = await fetch(`http://localhost:3032/api/graph/traversal/${nodeId}?max_depth=5`);
+                    const data = await response.json();
+                    this.visualizeTraversal(data.traversal_path);
+                } catch (error) {
+                    this.addLog(`❌ Failed to start traversal: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Initialize the UI
+        const graphUI = new SemanticGraphUI();
+        
+        // Global functions for UI interactions
+        async function addNode() {
+            const nodeId = document.getElementById('nodeId').value;
+            const nodeType = document.getElementById('nodeType').value;
+            const nodeLabel = document.getElementById('nodeLabel').value;
+            const activationLevel = parseFloat(document.getElementById('activationLevel').value) || 0;
+            
+            if (!nodeId || !nodeLabel) {
+                graphUI.addLog('❌ Node ID and Label are required', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3032/api/graph/nodes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: nodeId,
+                        type: nodeType,
+                        label: nodeLabel,
+                        activation_level: activationLevel,
+                        properties: {},
+                        state: {}
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    graphUI.addLog(`✅ Node created: ${nodeLabel}`, 'success');
+                    // Clear form
+                    document.getElementById('nodeId').value = '';
+                    document.getElementById('nodeLabel').value = '';
+                    document.getElementById('activationLevel').value = '';
+                } else {
+                    graphUI.addLog(`❌ Failed to create node`, 'error');
+                }
+            } catch (error) {
+                graphUI.addLog(`❌ Error creating node: ${error.message}`, 'error');
+            }
+        }
+        
+        async function addEdge() {
+            const edgeId = document.getElementById('edgeId').value;
+            const sourceId = document.getElementById('sourceId').value;
+            const targetId = document.getElementById('targetId').value;
+            const edgeType = document.getElementById('edgeType').value;
+            const weight = parseFloat(document.getElementById('edgeWeight').value) || 1;
+            
+            if (!edgeId || !sourceId || !targetId) {
+                graphUI.addLog('❌ Edge ID, Source ID, and Target ID are required', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3032/api/graph/edges', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: edgeId,
+                        source_id: sourceId,
+                        target_id: targetId,
+                        type: edgeType,
+                        weight: weight,
+                        properties: {}
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    graphUI.addLog(`✅ Edge created: ${edgeType}`, 'success');
+                    // Clear form
+                    document.getElementById('edgeId').value = '';
+                    document.getElementById('sourceId').value = '';
+                    document.getElementById('targetId').value = '';
+                    document.getElementById('edgeWeight').value = '1';
+                } else {
+                    graphUI.addLog(`❌ Failed to create edge`, 'error');
+                }
+            } catch (error) {
+                graphUI.addLog(`❌ Error creating edge: ${error.message}`, 'error');
+            }
+        }
+        
+        async function startTraversal() {
+            const nodeId = document.getElementById('traversalNodeId').value;
+            if (!nodeId) {
+                graphUI.addLog('❌ Node ID is required for traversal', 'error');
+                return;
+            }
+            
+            await graphUI.startTraversalFrom(nodeId);
+        }
+        
+        async function findEntanglementCandidates() {
+            const nodeId = document.getElementById('traversalNodeId').value;
+            if (!nodeId) {
+                graphUI.addLog('❌ Node ID is required', 'error');
+                return;
+            }
+            
+            await graphUI.findEntanglementCandidatesFor(nodeId);
+        }
+        
+        async function propagateActivation() {
+            const nodeId = document.getElementById('propagateNodeId').value;
+            const delta = parseFloat(document.getElementById('activationDelta').value) || 0;
+            
+            if (!nodeId) {
+                graphUI.addLog('❌ Node ID is required for propagation', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3032/api/graph/propagate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        node_id: nodeId,
+                        activation_delta: delta
+                    })
+                });
+                
+                const result = await response.json();
+                graphUI.addLog(`⚡ Propagated activation: ${result.changes_count} changes`, 'success');
+            } catch (error) {
+                graphUI.addLog(`❌ Error propagating activation: ${error.message}`, 'error');
+            }
+        }
+        
+        async function executeCascade() {
+            const nodeId = document.getElementById('cascadeNodeId').value;
+            const scenarioType = document.getElementById('cascadeType').value;
+            
+            if (!nodeId) {
+                graphUI.addLog('❌ Node ID is required for cascade', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3032/api/graph/cascade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        trigger_node_id: nodeId,
+                        scenario_type: scenarioType
+                    })
+                });
+                
+                const result = await response.json();
+                graphUI.addLog(`🌊 Cascade executed: ${result.total_events} events`, 'warning');
+            } catch (error) {
+                graphUI.addLog(`❌ Error executing cascade: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createEntanglement(node1Id, node2Id) {
+            try {
+                const response = await fetch('http://localhost:3032/api/graph/entangle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        node1_id: node1Id,
+                        node2_id: node2Id
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    graphUI.addLog(`🌀 Entanglement created between ${node1Id} and ${node2Id}`, 'success');
+                }
+            } catch (error) {
+                graphUI.addLog(`❌ Error creating entanglement: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
