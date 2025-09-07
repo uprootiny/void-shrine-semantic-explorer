@@ -435,6 +435,77 @@
             background: #00ffaa;
             box-shadow: 0 0 6px currentColor;
         }
+        
+        .health-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .health-dot.healthy {
+            background: #00ffaa;
+            box-shadow: 0 0 4px #00ffaa;
+        }
+        
+        .health-dot.warning {
+            background: #ffaa00;
+            box-shadow: 0 0 4px #ffaa00;
+        }
+        
+        .conversation-memory {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 8px 0;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.7em;
+            border-left: 3px solid var(--agent-color);
+        }
+        
+        .memory-entry {
+            margin: 4px 0;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 3px;
+        }
+        
+        .coordination-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #8a2be2;
+            border-radius: 10px;
+            padding: 15px;
+            width: 300px;
+            z-index: 999;
+            display: none;
+        }
+        
+        .coordination-mode {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid #8a2be2;
+            color: #8a2be2;
+            padding: 6px 12px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 0.7em;
+            display: inline-block;
+        }
+        
+        .coordination-mode:hover {
+            background: rgba(138, 43, 226, 0.4);
+        }
+        
+        .coordination-mode.active {
+            background: #8a2be2;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -491,6 +562,9 @@
             <div class="agent-model">Model: Claude 3.5 Sonnet</div>
             <div class="agent-response" id="tacticalResponse">
                 Standing by for strategic analysis and tactical coordination. Specialized in threat assessment, resource allocation, and decisive action planning.
+            </div>
+            <div class="conversation-memory" id="tacticalMemory">
+                <div class="memory-entry">🧠 Memory initialized - ready for context retention</div>
             </div>
             <div class="agent-controls">
                 <button class="agent-button" onclick="focusAgent('tactical')">FOCUS</button>
@@ -631,6 +705,15 @@
                     <div>Est. Cost</div>
                 </div>
             </div>
+            <div class="progress-graphs">
+                <canvas id="performanceChart" width="200" height="100" style="background: rgba(0,0,0,0.3); border-radius: 5px; margin-top: 10px;"></canvas>
+                <div class="health-indicators" style="display: flex; gap: 5px; margin-top: 10px;">
+                    <div class="health-dot" id="mcpHealth" title="MCP Service"></div>
+                    <div class="health-dot" id="ragHealth" title="RAG Engine"></div>
+                    <div class="health-dot" id="chaosHealth" title="Chaos System"></div>
+                    <div class="health-dot" id="moralHealth" title="Moral Recentering"></div>
+                </div>
+            </div>
         </div>
         
         <div class="prompt-panel">
@@ -658,9 +741,28 @@
                     <label>Temperature:</label>
                     <input type="range" class="config-input" id="temperature" min="0" max="2" step="0.1" value="0.7">
                 </div>
+                <div class="config-row">
+                    <label>API Key Status:</label>
+                    <span id="apiKeyStatus" style="color: #ff4444;">Not Set</span>
+                </div>
             </div>
             <button class="execute-button" onclick="executeSwarmCommand()">
                 🚀 EXECUTE SWARM COMMAND
+            </button>
+            <button class="agent-button" onclick="showConfigPanel()" style="margin-top: 8px; width: 100%; background: rgba(138, 43, 226, 0.2); border: 1px solid #8a2be2; color: #8a2be2;">
+                ⚙️ API CONFIGURATION
+            </button>
+            <button class="agent-button" onclick="runOrchestrationScenarios()" style="margin-top: 8px; width: 100%; background: rgba(255, 107, 107, 0.2); border: 1px solid #ff6b6b; color: #ff6b6b;">
+                🎭 ORCHESTRATION SCENARIOS
+            </button>
+            <button class="agent-button" onclick="runPromptTests()" style="margin-top: 8px; width: 100%; background: rgba(0, 255, 170, 0.2); border: 1px solid #00ffaa; color: #00ffaa;">
+                🧪 RUN PROMPT TESTS
+            </button>
+            <button class="agent-button" onclick="toggleCoordinationPanel()" style="margin-top: 8px; width: 100%; background: rgba(255, 170, 0, 0.2); border: 1px solid #ffaa00; color: #ffaa00;">
+                🎛️ COORDINATION MODES
+            </button>
+            <button class="agent-button" onclick="exportConfiguration()" style="margin-top: 8px; width: 100%; background: rgba(78, 205, 196, 0.2); border: 1px solid #4ecdc4; color: #4ecdc4;">
+                💾 EXPORT CONFIG
             </button>
         </div>
         
@@ -673,6 +775,21 @@
                 <div class="log-entry system">[SYSTEM] Secrets management active</div>
             </div>
         </div>
+    </div>
+    
+    <div class="coordination-panel" id="coordinationPanel">
+        <div class="panel-title" style="color: #8a2be2; margin-bottom: 10px;">🎛️ Agent Coordination Modes</div>
+        <div class="coordination-mode" onclick="setCoordinationMode('sequential')">🔄 Sequential</div>
+        <div class="coordination-mode active" onclick="setCoordinationMode('parallel')">⚡ Parallel</div>
+        <div class="coordination-mode" onclick="setCoordinationMode('pipeline')">🔗 Pipeline</div>
+        <div class="coordination-mode" onclick="setCoordinationMode('consensus')">🤝 Consensus</div>
+        <div class="coordination-mode" onclick="setCoordinationMode('competitive')">🏆 Competitive</div>
+        <div class="coordination-mode" onclick="setCoordinationMode('hierarchical')">🏗️ Hierarchical</div>
+        <div style="margin-top: 15px; font-size: 0.7em; color: #ccc;">
+            <div>Current: <span id="currentCoordinationMode">Parallel</span></div>
+            <div>Active Agents: <span id="activeAgentCount">8</span></div>
+        </div>
+        <button onclick="toggleCoordinationPanel()" style="background: #666; border: none; color: white; padding: 6px 12px; border-radius: 4px; margin-top: 10px; cursor: pointer;">Close</button>
     </div>
 
     <script>
@@ -740,10 +857,18 @@
                 this.config = {
                     apiKey: this.loadApiKey(),
                     apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+                    mcpEndpoint: 'http://45.90.121.59:3030/api/mcp',
+                    chaosEndpoint: 'http://45.90.121.59:3030/api/chaos',
+                    throttleEndpoint: 'http://45.90.121.59:3030/api/throttle',
+                    scalingEndpoint: 'http://45.90.121.59:3030/api/scaling',
+                    moralEndpoint: 'http://45.90.121.59:3030/api/moral-recentering',
                     maxTokens: 2000,
                     temperature: 0.7,
                     parallelExecution: true,
-                    synthesisMode: true
+                    synthesisMode: true,
+                    useMCP: true,
+                    chaosMode: true,
+                    moralRecentering: true
                 };
                 
                 this.metrics = {
@@ -762,8 +887,16 @@
                     ['local', { active: true, priority: 4 }]
                 ]);
                 
+                // Advanced features
+                this.coordinationMode = 'parallel';
+                this.conversationMemory = new Map();
+                this.healthStatus = new Map();
+                this.performanceData = [];
+                
                 this.initializeSecrets();
                 this.startMetricsMonitoring();
+                this.startHealthMonitoring();
+                this.initializePerformanceChart();
             }
             
             loadApiKey() {
@@ -773,13 +906,14 @@
                     () => localStorage.getItem('openrouter_api_key'),
                     () => this.getGithubSecret('OPENROUTER_API_KEY'),
                     () => this.getDockerSecret('openrouter_api_key'),
-                    () => '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' // Fallback
+                    () => this.promptUserForKey(), // Prompt user if no key found
                 ];
                 
                 for (const source of sources) {
                     try {
                         const key = source();
-                        if (key && key.startsWith('sk-or-')) {
+                        if (key && key.startsWith('sk-or-') && key !== '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') {
+                            this.log(`Using API key from secure source`, 'system');
                             return key;
                         }
                     } catch (e) {
@@ -787,7 +921,25 @@
                     }
                 }
                 
-                return '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';
+                // No valid key found - use demo mode
+                this.log('⚠️ NO VALID API KEY FOUND - Operating in demo mode', 'error');
+                this.log('💡 Add your OpenRouter API key to localStorage or environment variables', 'system');
+                return null; // Return null to trigger demo mode
+            }
+            
+            promptUserForKey() {
+                const stored = localStorage.getItem('openrouter_api_key');
+                if (stored && stored !== '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') {
+                    return stored;
+                }
+                
+                const userKey = prompt('Enter your OpenRouter API Key (get one from https://openrouter.ai/keys):');
+                if (userKey && userKey.startsWith('sk-or-')) {
+                    localStorage.setItem('openrouter_api_key', userKey);
+                    this.log('API key saved to localStorage', 'system');
+                    return userKey;
+                }
+                return null;
             }
             
             initializeSecrets() {
@@ -867,24 +1019,369 @@
             }
             
             async executeParallel(prompt) {
-                this.log('Executing parallel agent requests', 'system');
+                this.log('Executing throttled stream-based agent requests', 'system');
                 
-                const promises = Array.from(this.agents.keys()).map(agentId => 
-                    this.callAgent(agentId, prompt)
-                );
+                const agentIds = Array.from(this.agents.keys());
+                const throttleDelay = 2000; // 2 seconds between agent calls
+                
+                // Execute agents with throttled streaming
+                for (let i = 0; i < agentIds.length; i++) {
+                    const agentId = agentIds[i];
+                    
+                    // Add visible delay indicator
+                    if (i > 0) {
+                        this.showThrottleProgress(agentId, throttleDelay);
+                        await this.sleep(throttleDelay);
+                    }
+                    
+                    // Start agent call (non-blocking)
+                    this.callAgentWithStream(agentId, prompt).catch(error => {
+                        this.log(`Agent ${agentId} failed: ${error.message}`, 'error');
+                    });
+                    
+                    // Small additional delay to prevent API rate limits
+                    await this.sleep(500);
+                }
+            }
+            
+            showThrottleProgress(agentId, delay) {
+                const statusEl = document.getElementById(`${agentId}Status`);
+                const responseEl = document.getElementById(`${agentId}Response`);
+                
+                statusEl.textContent = 'WAITING';
+                responseEl.textContent = `Throttled delay: ${delay/1000}s...`;
+                
+                let countdown = delay / 1000;
+                const interval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        responseEl.textContent = `Throttled delay: ${countdown}s...`;
+                    } else {
+                        clearInterval(interval);
+                        statusEl.textContent = 'READY';
+                        responseEl.textContent = 'Ready for processing...';
+                    }
+                }, 1000);
+            }
+            
+            async callAgentWithStream(agentId, prompt) {
+                const agent = this.agents.get(agentId);
+                const startTime = Date.now();
+                
+                this.updateAgentStatus(agentId, 'CONNECTING');
+                this.updateAgentResponse(agentId, 'Establishing connection...');
+                
+                // Simulate connection delay
+                await this.sleep(200);
                 
                 try {
-                    const results = await Promise.allSettled(promises);
-                    results.forEach((result, index) => {
-                        const agentId = Array.from(this.agents.keys())[index];
-                        if (result.status === 'fulfilled') {
-                            this.log(`Agent ${agentId} completed successfully`, 'agent');
-                        } else {
-                            this.log(`Agent ${agentId} failed: ${result.reason}`, 'error');
-                        }
+                    this.updateAgentStatus(agentId, 'STREAMING');
+                    this.updateAgentResponse(agentId, 'Streaming response...');
+                    
+                    const response = await this.makeStreamedAPICall(agent.model, prompt, agent.specialty, agentId);
+                    
+                    agent.lastResponse = response;
+                    agent.responseTime = Date.now() - startTime;
+                    
+                    this.updateAgentStatus(agentId, 'COMPLETE');
+                    
+                    // Update metrics
+                    this.updateMetrics({
+                        tokenUsage: this.metrics.tokenUsage + this.estimateTokens(response),
+                        avgLatency: (this.metrics.avgLatency + agent.responseTime) / 2
                     });
+                    
+                    this.log(`Agent ${agentId} completed in ${agent.responseTime}ms`, 'agent');
+                    return response;
                 } catch (error) {
-                    this.log(`Parallel execution error: ${error.message}`, 'error');
+                    this.updateAgentStatus(agentId, 'ERROR');
+                    this.updateAgentResponse(agentId, `Error: ${error.message}`);
+                    throw error;
+                }
+            }
+            
+            async makeStreamedAPICall(model, prompt, specialty, agentId) {
+                // Use MCP endpoint if enabled
+                if (this.config.useMCP) {
+                    return this.callMCPEndpoint(model, prompt, specialty, agentId);
+                }
+                
+                // Check if we have a valid API key for direct OpenRouter
+                if (!this.config.apiKey || this.config.apiKey.includes('YOUR_ACTUAL_OPENROUTER_API_KEY_HERE')) {
+                    return this.simulateStreamedResponse(model, prompt, specialty, agentId);
+                }
+                
+                const systemPrompt = `You are a ${specialty} specialist in a multi-agent AI system. Provide focused, professional responses from your area of expertise.`;
+                
+                const requestBody = {
+                    model: model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: prompt }
+                    ],
+                    max_tokens: parseInt(document.getElementById('maxTokens').value),
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    stream: false // We'll simulate streaming on the client side
+                };
+                
+                try {
+                    const response = await fetch(this.config.apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.config.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'Agent Orchestrator'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        this.log(`API Error ${response.status}: ${errorText}`, 'error');
+                        
+                        if (response.status === 401) {
+                            throw new Error('Invalid API key - check your OpenRouter credentials');
+                        } else if (response.status === 400) {
+                            throw new Error(`Bad request - possibly unsupported model: ${model}`);
+                        } else if (response.status === 429) {
+                            throw new Error('Rate limit exceeded - wait and try again');
+                        } else {
+                            throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+                        }
+                    }
+                    
+                    const data = await response.json();
+                    const fullResponse = data.choices[0].message.content;
+                    
+                    // Simulate streaming effect by revealing response gradually
+                    await this.streamResponseToUI(agentId, fullResponse);
+                    
+                    return fullResponse;
+                } catch (error) {
+                    this.log(`Network or API error: ${error.message}`, 'error');
+                    
+                    // Fallback to demo response if API fails
+                    if (error.message.includes('Invalid API key') || error.message.includes('Bad request')) {
+                        this.log('Falling back to demo response', 'system');
+                        return this.simulateStreamedResponse(model, prompt, specialty, agentId);
+                    }
+                    throw error;
+                }
+            }
+            
+            async simulateStreamedResponse(model, prompt, specialty, agentId) {
+                const demoResponse = this.getDemoResponse(model, prompt, specialty);
+                await this.streamResponseToUI(agentId, demoResponse);
+                return demoResponse;
+            }
+            
+            async streamResponseToUI(agentId, fullResponse) {
+                const responseEl = document.getElementById(`${agentId}Response`);
+                const words = fullResponse.split(' ');
+                const chunkSize = Math.max(1, Math.floor(words.length / 20)); // 20 chunks
+                
+                responseEl.textContent = '';
+                
+                for (let i = 0; i < words.length; i += chunkSize) {
+                    const chunk = words.slice(i, i + chunkSize).join(' ');
+                    const currentText = responseEl.textContent;
+                    responseEl.textContent = currentText + (currentText ? ' ' : '') + chunk;
+                    
+                    // Scroll to keep response visible
+                    responseEl.scrollTop = responseEl.scrollHeight;
+                    
+                    // Throttled delay between chunks
+                    await this.sleep(150 + Math.random() * 100); // 150-250ms per chunk
+                }
+            }
+            
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            async callMCPEndpoint(model, prompt, specialty, agentId) {
+                try {
+                    // Apply chaos engineering if enabled
+                    if (this.config.chaosMode) {
+                        await this.applyChaosEngineering(agentId);
+                    }
+                    
+                    // Apply moral recentering
+                    if (this.config.moralRecentering) {
+                        prompt = await this.applyMoralRecentering(prompt, specialty);
+                    }
+                    
+                    // Check throttling status
+                    const throttleStatus = await this.checkThrottling(agentId);
+                    if (throttleStatus.shouldThrottle) {
+                        await this.sleep(throttleStatus.delay);
+                    }
+                    
+                    const mcpRequest = {
+                        method: 'llm_inference',
+                        params: {
+                            agent_id: agentId,
+                            model: model,
+                            specialty: specialty,
+                            prompt: prompt,
+                            max_tokens: this.config.maxTokens,
+                            temperature: this.config.temperature,
+                            use_rag: true,
+                            context_window: 8192
+                        }
+                    };
+                    
+                    const response = await fetch(this.config.mcpEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Agent-ID': agentId,
+                            'X-Specialty': specialty,
+                            'X-Void-Shrine-Token': this.generateVoidShrineToken()
+                        },
+                        body: JSON.stringify(mcpRequest)
+                    });
+                    
+                    if (!response.ok) {
+                        // Fallback to direct OpenRouter or demo
+                        this.log(`MCP endpoint failed, falling back: ${response.status}`, 'error');
+                        return this.fallbackToOpenRouter(model, prompt, specialty, agentId);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.result && data.result.response) {
+                        // Apply scaling adjustments
+                        await this.applyScalingAdjustments(agentId, data.result.metrics);
+                        
+                        await this.streamResponseToUI(agentId, data.result.response);
+                        return data.result.response;
+                    } else {
+                        throw new Error('Invalid MCP response format');
+                    }
+                    
+                } catch (error) {
+                    this.log(`MCP endpoint error: ${error.message}`, 'error');
+                    return this.fallbackToOpenRouter(model, prompt, specialty, agentId);
+                }
+            }
+            
+            async applyChaosEngineering(agentId) {
+                try {
+                    const chaosResponse = await fetch(this.config.chaosEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            agent_id: agentId,
+                            chaos_type: 'network_delay',
+                            intensity: 0.3
+                        })
+                    });
+                    
+                    if (chaosResponse.ok) {
+                        const chaos = await chaosResponse.json();
+                        if (chaos.apply_chaos) {
+                            this.log(`🌪️ Chaos applied to ${agentId}: ${chaos.effect}`, 'system');
+                            await this.sleep(chaos.delay_ms || 0);
+                        }
+                    }
+                } catch (e) {
+                    // Chaos engineering failure is acceptable
+                    this.log(`Chaos engineering unavailable`, 'system');
+                }
+            }
+            
+            async applyMoralRecentering(prompt, specialty) {
+                try {
+                    const moralResponse = await fetch(this.config.moralEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            original_prompt: prompt,
+                            specialty: specialty,
+                            void_shrine_context: true,
+                            ethical_framework: 'care-ethics'
+                        })
+                    });
+                    
+                    if (moralResponse.ok) {
+                        const moral = await moralResponse.json();
+                        if (moral.recentered_prompt) {
+                            this.log(`🧭 Moral recentering applied for ${specialty}`, 'system');
+                            return moral.recentered_prompt;
+                        }
+                    }
+                } catch (e) {
+                    this.log(`Moral recentering unavailable, using original prompt`, 'system');
+                }
+                
+                return prompt; // Return original if recentering fails
+            }
+            
+            async checkThrottling(agentId) {
+                try {
+                    const throttleResponse = await fetch(`${this.config.throttleEndpoint}/${agentId}`, {
+                        method: 'GET'
+                    });
+                    
+                    if (throttleResponse.ok) {
+                        const throttle = await throttleResponse.json();
+                        return {
+                            shouldThrottle: throttle.should_throttle,
+                            delay: throttle.delay_ms || 0,
+                            reason: throttle.reason
+                        };
+                    }
+                } catch (e) {
+                    this.log(`Throttling service unavailable`, 'system');
+                }
+                
+                return { shouldThrottle: false, delay: 0 };
+            }
+            
+            async applyScalingAdjustments(agentId, metrics) {
+                try {
+                    const scalingResponse = await fetch(this.config.scalingEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            agent_id: agentId,
+                            response_time: metrics?.response_time_ms,
+                            token_count: metrics?.token_count,
+                            success: true
+                        })
+                    });
+                    
+                    if (scalingResponse.ok) {
+                        const scaling = await scalingResponse.json();
+                        if (scaling.adjustments) {
+                            this.log(`⚖️ Scaling adjustments: ${scaling.adjustments.description}`, 'system');
+                        }
+                    }
+                } catch (e) {
+                    // Scaling adjustment failure is non-critical
+                }
+            }
+            
+            generateVoidShrineToken() {
+                const timestamp = Date.now();
+                const entropy = Math.random().toString(36).substring(2);
+                return `vs_${timestamp}_${entropy}`;
+            }
+            
+            async fallbackToOpenRouter(model, prompt, specialty, agentId) {
+                this.log(`Using OpenRouter fallback for ${agentId}`, 'system');
+                
+                // Temporarily disable MCP to use direct OpenRouter
+                const originalUseMCP = this.config.useMCP;
+                this.config.useMCP = false;
+                
+                try {
+                    const result = await this.makeStreamedAPICall(model, prompt, specialty, agentId);
+                    return result;
+                } finally {
+                    this.config.useMCP = originalUseMCP;
                 }
             }
             
@@ -916,6 +1413,9 @@
                     this.updateAgentResponse(agentId, response);
                     this.updateAgentStatus(agentId, 'COMPLETE');
                     
+                    // Add to conversation memory
+                    this.addToMemory(agentId, prompt, response);
+                    
                     // Update metrics
                     this.updateMetrics({
                         tokenUsage: this.metrics.tokenUsage + this.estimateTokens(response),
@@ -931,6 +1431,11 @@
             }
             
             async makeAPICall(model, prompt, specialty) {
+                // Check if we have a valid API key
+                if (!this.config.apiKey || this.config.apiKey.includes('YOUR_ACTUAL_OPENROUTER_API_KEY_HERE')) {
+                    return this.getDemoResponse(model, prompt, specialty);
+                }
+                
                 const systemPrompt = `You are a ${specialty} specialist in a multi-agent AI system. Provide focused, professional responses from your area of expertise.`;
                 
                 const requestBody = {
@@ -944,23 +1449,60 @@
                     stream: false
                 };
                 
-                const response = await fetch(this.config.apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.config.apiKey}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': window.location.origin,
-                        'X-Title': 'Agent Orchestrator'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+                try {
+                    const response = await fetch(this.config.apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.config.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'Agent Orchestrator'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        this.log(`API Error ${response.status}: ${errorText}`, 'error');
+                        
+                        if (response.status === 401) {
+                            throw new Error('Invalid API key - check your OpenRouter credentials');
+                        } else if (response.status === 400) {
+                            throw new Error(`Bad request - possibly unsupported model: ${model}`);
+                        } else if (response.status === 429) {
+                            throw new Error('Rate limit exceeded - wait and try again');
+                        } else {
+                            throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+                        }
+                    }
+                    
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                } catch (error) {
+                    this.log(`Network or API error: ${error.message}`, 'error');
+                    
+                    // Fallback to demo response if API fails
+                    if (error.message.includes('Invalid API key') || error.message.includes('Bad request')) {
+                        this.log('Falling back to demo response', 'system');
+                        return this.getDemoResponse(model, prompt, specialty);
+                    }
+                    throw error;
                 }
+            }
+            
+            getDemoResponse(model, prompt, specialty) {
+                const demoResponses = {
+                    'anthropic/claude-3.5-sonnet': `[DEMO MODE] As a tactical coordinator, I analyze the situation with strategic precision. Your prompt "${prompt.substring(0, 50)}..." requires systematic assessment of resources and optimal deployment strategies.`,
+                    'openai/gpt-4': `[DEMO MODE] From a scientific analysis perspective, this problem requires methodical investigation. I would approach "${prompt.substring(0, 50)}..." through hypothesis formation and evidence-based reasoning.`,
+                    'meta-llama/llama-3.1-405b': `[DEMO MODE] Operations analysis indicates multiple implementation vectors for "${prompt.substring(0, 50)}...". Coordinating systematic execution across operational domains.`,
+                    'google/gemini-pro': `[DEMO MODE] Engineering assessment complete. Technical implementation for "${prompt.substring(0, 50)}..." requires scalable architecture and robust system design principles.`,
+                    'openai/gpt-4-turbo': `[DEMO MODE] Creative synthesis engaging. Novel approaches to "${prompt.substring(0, 50)}..." involve innovative perspective generation and artistic problem-solving methodologies.`,
+                    'anthropic/claude-3-opus': `[DEMO MODE] Research protocols active. Deep investigation of "${prompt.substring(0, 50)}..." requires comprehensive knowledge synthesis across multiple domains.`,
+                    'mistralai/mixtral-8x7b-instruct': `[DEMO MODE] Statistical analysis framework deployed. Quantitative assessment of "${prompt.substring(0, 50)}..." involves data processing and trend identification protocols.`,
+                    'perplexity/llama-3.1-70b': `[DEMO MODE] Support systems monitoring complete. Performance optimization for "${prompt.substring(0, 50)}..." ensures operational resilience and system health.`
+                };
                 
-                const data = await response.json();
-                return data.choices[0].message.content;
+                return demoResponses[model] || `[DEMO MODE] ${specialty} response to: "${prompt.substring(0, 50)}..." - This is a demonstration response. Add a valid OpenRouter API key for real AI responses.`;
             }
             
             async synthesizeResponses() {
@@ -1072,6 +1614,218 @@
                     logDisplay.removeChild(logDisplay.firstChild);
                 }
             }
+            
+            // Advanced coordination methods
+            async executeCoordinationMode(prompt) {
+                switch (this.coordinationMode) {
+                    case 'sequential':
+                        return this.executeSequential(prompt);
+                    case 'parallel':
+                        return this.executeParallel(prompt);
+                    case 'pipeline':
+                        return this.executePipeline(prompt);
+                    case 'consensus':
+                        return this.executeConsensus(prompt);
+                    case 'competitive':
+                        return this.executeCompetitive(prompt);
+                    case 'hierarchical':
+                        return this.executeHierarchical(prompt);
+                    default:
+                        return this.executeParallel(prompt);
+                }
+            }
+            
+            async executePipeline(prompt) {
+                this.log('🔗 Executing pipeline coordination', 'system');
+                
+                const pipeline = ['tactical', 'science', 'engineering', 'operations'];
+                let currentPrompt = prompt;
+                
+                for (const agentId of pipeline) {
+                    try {
+                        const response = await this.callAgentWithStream(agentId, currentPrompt);
+                        currentPrompt = `Building on previous analysis: ${response.substring(0, 200)}...\n\nNew task: ${prompt}`;
+                        await this.sleep(1000); // Pipeline delay
+                    } catch (error) {
+                        this.log(`Pipeline broken at ${agentId}: ${error.message}`, 'error');
+                        break;
+                    }
+                }
+            }
+            
+            async executeConsensus(prompt) {
+                this.log('🤝 Executing consensus coordination', 'system');
+                
+                const primaryAgents = ['tactical', 'science', 'engineering'];
+                const responses = [];
+                
+                // Get initial responses
+                for (const agentId of primaryAgents) {
+                    try {
+                        const response = await this.callAgentWithStream(agentId, prompt);
+                        responses.push({agentId, response});
+                    } catch (error) {
+                        this.log(`Consensus agent ${agentId} failed: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Synthesis for consensus
+                if (responses.length > 1) {
+                    const consensusPrompt = `Review these responses and identify consensus points: ${responses.map(r => r.response.substring(0, 100)).join('; ')}`;
+                    await this.callAgentWithStream('research', consensusPrompt);
+                }
+            }
+            
+            async executeCompetitive(prompt) {
+                this.log('🏆 Executing competitive coordination', 'system');
+                
+                const competitors = ['tactical', 'science', 'creative', 'analysis'];
+                const startTime = Date.now();
+                
+                const promises = competitors.map(agentId => 
+                    this.callAgentWithStream(agentId, `Compete to provide the best response: ${prompt}`)
+                        .then(response => ({agentId, response, time: Date.now() - startTime}))
+                        .catch(error => ({agentId, error: error.message, time: Date.now() - startTime}))
+                );
+                
+                const results = await Promise.allSettled(promises);
+                const winner = results
+                    .filter(r => r.status === 'fulfilled' && !r.value.error)
+                    .sort((a, b) => a.value.time - b.value.time)[0];
+                
+                if (winner) {
+                    this.log(`🏆 Competition winner: ${winner.value.agentId} (${winner.value.time}ms)`, 'agent');
+                }
+            }
+            
+            async executeHierarchical(prompt) {
+                this.log('🏗️ Executing hierarchical coordination', 'system');
+                
+                // Strategic level
+                const strategic = await this.callAgentWithStream('tactical', `Strategic overview needed: ${prompt}`);
+                
+                // Tactical level
+                const tactical = await Promise.allSettled([
+                    this.callAgentWithStream('science', `Scientific analysis for: ${prompt}`),
+                    this.callAgentWithStream('engineering', `Technical implementation for: ${prompt}`)
+                ]);
+                
+                // Operational level
+                await Promise.allSettled([
+                    this.callAgentWithStream('operations', `Execute based on strategic plan: ${strategic.substring(0, 100)}...`),
+                    this.callAgentWithStream('support', `Support requirements for: ${prompt}`)
+                ]);
+            }
+            
+            // Health monitoring
+            startHealthMonitoring() {
+                setInterval(async () => {
+                    await this.checkSystemHealth();
+                }, 5000); // Check every 5 seconds
+            }
+            
+            async checkSystemHealth() {
+                // Check MCP service
+                try {
+                    const mcpResponse = await fetch(this.config.mcpEndpoint.replace('/mcp', '/throttle/health'), {method: 'GET', signal: AbortSignal.timeout(2000)});
+                    this.updateHealthIndicator('mcpHealth', mcpResponse.ok);
+                } catch {
+                    this.updateHealthIndicator('mcpHealth', false);
+                }
+                
+                // Check other services (simulated)
+                this.updateHealthIndicator('ragHealth', true);
+                this.updateHealthIndicator('chaosHealth', this.config.chaosMode);
+                this.updateHealthIndicator('moralHealth', this.config.moralRecentering);
+            }
+            
+            updateHealthIndicator(elementId, isHealthy) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.className = `health-dot ${isHealthy ? 'healthy' : ''}`;
+                }
+            }
+            
+            // Performance chart
+            initializePerformanceChart() {
+                const canvas = document.getElementById('performanceChart');
+                const ctx = canvas.getContext('2d');
+                
+                setInterval(() => {
+                    this.updatePerformanceChart(ctx, canvas);
+                }, 1000);
+            }
+            
+            updatePerformanceChart(ctx, canvas) {
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+                
+                // Add current metrics
+                this.performanceData.push({
+                    timestamp: Date.now(),
+                    requests: this.metrics.totalRequests,
+                    latency: this.metrics.avgLatency,
+                    errorRate: this.metrics.errorRate
+                });
+                
+                // Keep last 50 data points
+                if (this.performanceData.length > 50) {
+                    this.performanceData.shift();
+                }
+                
+                if (this.performanceData.length < 2) return;
+                
+                // Draw latency line
+                ctx.strokeStyle = '#00ffaa';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                this.performanceData.forEach((point, index) => {
+                    const x = (index / this.performanceData.length) * width;
+                    const y = height - (Math.min(point.latency, 5000) / 5000) * height;
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+            }
+            
+            // Conversation memory
+            addToMemory(agentId, prompt, response) {
+                if (!this.conversationMemory.has(agentId)) {
+                    this.conversationMemory.set(agentId, []);
+                }
+                
+                const memory = this.conversationMemory.get(agentId);
+                memory.push({
+                    timestamp: new Date().toISOString(),
+                    prompt: prompt.substring(0, 50) + '...',
+                    response: response.substring(0, 100) + '...'
+                });
+                
+                // Keep last 5 interactions
+                if (memory.length > 5) {
+                    memory.shift();
+                }
+                
+                this.updateMemoryDisplay(agentId, memory);
+            }
+            
+            updateMemoryDisplay(agentId, memory) {
+                const memoryElement = document.getElementById(`${agentId}Memory`);
+                if (memoryElement) {
+                    memoryElement.innerHTML = memory.map((entry, index) => 
+                        `<div class="memory-entry">💭 ${index + 1}: ${entry.prompt} → ${entry.response}</div>`
+                    ).join('');
+                }
+            }
         }
         
         // Global functions
@@ -1099,9 +1853,441 @@
         }
         
         function executeSwarmCommand() {
+            orchestrator.executeCoordinationMode(document.getElementById('mainPrompt').value);
+        }
+        
+        function toggleCoordinationPanel() {
+            const panel = document.getElementById('coordinationPanel');
+            panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
+        }
+        
+        function setCoordinationMode(mode) {
+            orchestrator.coordinationMode = mode;
+            document.getElementById('currentCoordinationMode').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+            
+            // Update UI
+            document.querySelectorAll('.coordination-mode').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            orchestrator.log(`🎛️ Coordination mode set to: ${mode}`, 'system');
+        }
+        
+        function exportConfiguration() {
+            const config = {
+                agents: Array.from(orchestrator.agents.entries()),
+                coordinationMode: orchestrator.coordinationMode,
+                config: orchestrator.config,
+                conversationMemory: Array.from(orchestrator.conversationMemory.entries()),
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `void-shrine-config-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            orchestrator.log('💾 Configuration exported', 'system');
+        }
+        
+        function showConfigPanel() {
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid #8a2be2;
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 500px;
+                z-index: 1000;
+                color: #e0e0ff;
+            `;
+            
+            const currentKey = localStorage.getItem('openrouter_api_key') || '';
+            const isValidKey = currentKey && currentKey.startsWith('sk-or-') && currentKey !== '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';
+            
+            panel.innerHTML = `
+                <h3 style="color: #8a2be2; margin-bottom: 15px;">🔐 API Configuration</h3>
+                <p style="font-size: 0.85em; margin-bottom: 15px; line-height: 1.4;">
+                    To use real AI agents, you need a valid OpenRouter API key.<br>
+                    Get one from: <a href="https://openrouter.ai/keys" target="_blank" style="color: #00ffaa;">https://openrouter.ai/keys</a>
+                </p>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">OpenRouter API Key:</label>
+                    <input type="password" id="configApiKey" value="${currentKey}" 
+                           style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #666; 
+                                  color: #e0e0ff; padding: 8px; border-radius: 4px; font-family: monospace;">
+                    <div style="font-size: 0.7em; margin-top: 5px; color: ${isValidKey ? '#00ffaa' : '#ff4444'};">
+                        Status: ${isValidKey ? 'Valid Key Format' : 'No valid key found'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="font-size: 0.75em; color: #ffaa00;">
+                        ⚠️ Known Issues:<br>
+                        • Gemini Pro: May not be available on your OpenRouter plan<br>
+                        • Perplexity 70B: Requires specific model access<br>
+                        • Some models need premium OpenRouter subscription
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #666; border: none; color: white; padding: 8px 16px; 
+                                   border-radius: 5px; cursor: pointer;">Cancel</button>
+                    <button onclick="saveApiKey(); this.parentElement.parentElement.remove();" 
+                            style="background: #8a2be2; border: none; color: white; padding: 8px 16px; 
+                                   border-radius: 5px; cursor: pointer;">Save</button>
+                </div>
+            `;
+            
+            document.body.appendChild(panel);
+        }
+        
+        function saveApiKey() {
+            const keyInput = document.getElementById('configApiKey');
+            const newKey = keyInput.value.trim();
+            
+            if (newKey && newKey.startsWith('sk-or-')) {
+                localStorage.setItem('openrouter_api_key', newKey);
+                orchestrator.config.apiKey = newKey;
+                orchestrator.log('API key updated successfully', 'system');
+                updateApiKeyStatus();
+            } else {
+                orchestrator.log('Invalid API key format', 'error');
+            }
+        }
+        
+        function updateApiKeyStatus() {
+            const statusEl = document.getElementById('apiKeyStatus');
+            const currentKey = orchestrator.config.apiKey;
+            
+            if (!currentKey || currentKey.includes('YOUR_ACTUAL_OPENROUTER_API_KEY_HERE')) {
+                statusEl.textContent = 'Demo Mode';
+                statusEl.style.color = '#ffaa00';
+            } else if (currentKey.startsWith('sk-or-') && currentKey !== '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') {
+                statusEl.textContent = 'Valid Key';
+                statusEl.style.color = '#00ffaa';
+            } else {
+                statusEl.textContent = 'Invalid Key';
+                statusEl.style.color = '#ff4444';
+            }
+        }
+        
+        function executeSwarmCommand() {
             orchestrator.executeSwarmCommand();
         }
         
+        // Orchestration Scenarios for Testing
+        const orchestrationScenarios = [
+            {
+                name: "Strategic Crisis Response",
+                description: "Multi-agent crisis analysis and response planning",
+                prompt: "A major supply chain disruption has occurred affecting multiple industries. Provide comprehensive analysis and response strategies.",
+                expectedAgents: ['tactical', 'science', 'ops', 'engineering'],
+                successMetrics: {
+                    minResponseTime: 5000,
+                    maxResponseTime: 30000,
+                    requiredAgents: 4,
+                    coherenceThreshold: 0.7
+                }
+            },
+            {
+                name: "Technical Architecture Design",
+                description: "Collaborative system architecture planning",
+                prompt: "Design a scalable microservices architecture for a high-traffic e-commerce platform with real-time analytics.",
+                expectedAgents: ['engineering', 'science', 'ops', 'analysis'],
+                successMetrics: {
+                    minResponseTime: 3000,
+                    maxResponseTime: 25000,
+                    requiredAgents: 4,
+                    coherenceThreshold: 0.8
+                }
+            },
+            {
+                name: "Creative Problem Solving",
+                description: "Innovation-focused multi-perspective analysis",
+                prompt: "How can we reimagine urban transportation to be more sustainable and efficient?",
+                expectedAgents: ['creative', 'science', 'engineering', 'research'],
+                successMetrics: {
+                    minResponseTime: 4000,
+                    maxResponseTime: 35000,
+                    requiredAgents: 4,
+                    coherenceThreshold: 0.6
+                }
+            },
+            {
+                name: "Data Analysis Workflow",
+                description: "End-to-end data processing and insights",
+                prompt: "Analyze patterns in customer behavior data and recommend optimization strategies for user engagement.",
+                expectedAgents: ['analysis', 'science', 'tactical', 'support'],
+                successMetrics: {
+                    minResponseTime: 3000,
+                    maxResponseTime: 20000,
+                    requiredAgents: 4,
+                    coherenceThreshold: 0.8
+                }
+            },
+            {
+                name: "Research Synthesis",
+                description: "Comprehensive knowledge integration",
+                prompt: "Synthesize current research on artificial intelligence safety and provide actionable recommendations.",
+                expectedAgents: ['research', 'science', 'tactical', 'analysis'],
+                successMetrics: {
+                    minResponseTime: 5000,
+                    maxResponseTime: 40000,
+                    requiredAgents: 4,
+                    coherenceThreshold: 0.9
+                }
+            }
+        ];
+
+        // Agent-specific prompt tests
+        const agentPromptTests = {
+            tactical: [
+                "Analyze the strategic implications of implementing a new customer acquisition strategy",
+                "Assess the tactical risks of entering a new market with limited resources",
+                "Develop a resource allocation plan for a multi-phase project rollout"
+            ],
+            science: [
+                "Identify patterns in this dataset: [1,3,5,8,13,21,34]. What's the underlying structure?",
+                "Analyze the correlation between user engagement metrics and retention rates",
+                "Investigate anomalies in system performance data over the last month"
+            ],
+            ops: [
+                "Coordinate the deployment of a microservices architecture across multiple environments",
+                "Implement a monitoring system for distributed applications with automatic scaling",
+                "Execute a zero-downtime migration of critical database systems"
+            ],
+            engineering: [
+                "Design a fault-tolerant distributed computing system for real-time data processing",
+                "Architect a secure API gateway with rate limiting and authentication",
+                "Build a scalable event-driven architecture for high-volume transactions"
+            ],
+            creative: [
+                "Generate innovative approaches to visualizing complex financial data",
+                "Design a user experience that makes advanced analytics accessible to non-experts",
+                "Create novel interaction paradigms for multi-dimensional data exploration"
+            ],
+            research: [
+                "Synthesize current literature on distributed systems consensus algorithms",
+                "Investigate emerging trends in machine learning interpretability methods",
+                "Analyze the evolution of API design patterns over the last decade"
+            ],
+            analysis: [
+                "Perform statistical analysis on user behavior patterns to identify optimization opportunities",
+                "Calculate the ROI impact of implementing advanced caching strategies",
+                "Quantify the performance improvements from database query optimization"
+            ],
+            support: [
+                "Monitor system health metrics and identify potential bottlenecks before they impact users",
+                "Optimize resource utilization across containerized workloads for cost efficiency",
+                "Implement automated failover procedures for critical system components"
+            ]
+        };
+
+        async function runOrchestrationScenarios() {
+            orchestrator.log('🎭 Starting orchestration scenario testing', 'system');
+            
+            const scenarioResults = [];
+            
+            for (let i = 0; i < orchestrationScenarios.length; i++) {
+                const scenario = orchestrationScenarios[i];
+                orchestrator.log(`Testing scenario ${i + 1}: ${scenario.name}`, 'system');
+                
+                const startTime = Date.now();
+                
+                // Set the prompt
+                document.getElementById('mainPrompt').value = scenario.prompt;
+                
+                // Execute the scenario
+                try {
+                    await orchestrator.executeSwarmCommand();
+                    
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+                    
+                    const result = {
+                        name: scenario.name,
+                        success: duration >= scenario.successMetrics.minResponseTime && 
+                                duration <= scenario.successMetrics.maxResponseTime,
+                        duration: duration,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    scenarioResults.push(result);
+                    
+                    orchestrator.log(`Scenario "${scenario.name}": ${result.success ? '✅ PASS' : '❌ FAIL'} (${duration}ms)`, 
+                                   result.success ? 'agent' : 'error');
+                    
+                } catch (error) {
+                    orchestrator.log(`Scenario "${scenario.name}" failed: ${error.message}`, 'error');
+                    scenarioResults.push({
+                        name: scenario.name,
+                        success: false,
+                        error: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                // Wait between scenarios to prevent rate limiting
+                await orchestrator.sleep(3000);
+            }
+            
+            // Display results summary
+            showScenarioResults(scenarioResults);
+        }
+
+        async function runPromptTests() {
+            orchestrator.log('🧪 Starting agent-specific prompt tests', 'system');
+            
+            const testResults = {};
+            
+            for (const [agentId, prompts] of Object.entries(agentPromptTests)) {
+                orchestrator.log(`Testing agent: ${agentId}`, 'system');
+                testResults[agentId] = [];
+                
+                for (let i = 0; i < prompts.length; i++) {
+                    const prompt = prompts[i];
+                    const startTime = Date.now();
+                    
+                    try {
+                        orchestrator.log(`${agentId} test ${i + 1}: ${prompt.substring(0, 50)}...`, 'system');
+                        await orchestrator.callAgentWithStream(agentId, prompt);
+                        
+                        const duration = Date.now() - startTime;
+                        testResults[agentId].push({
+                            prompt: prompt.substring(0, 50) + '...',
+                            success: true,
+                            duration: duration
+                        });
+                        
+                        orchestrator.log(`${agentId} test ${i + 1}: ✅ PASS (${duration}ms)`, 'agent');
+                        
+                    } catch (error) {
+                        testResults[agentId].push({
+                            prompt: prompt.substring(0, 50) + '...',
+                            success: false,
+                            error: error.message
+                        });
+                        
+                        orchestrator.log(`${agentId} test ${i + 1}: ❌ FAIL - ${error.message}`, 'error');
+                    }
+                    
+                    // Throttle between tests
+                    await orchestrator.sleep(2000);
+                }
+                
+                // Wait between agents
+                await orchestrator.sleep(1000);
+            }
+            
+            showPromptTestResults(testResults);
+        }
+
+        function showScenarioResults(results) {
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                position: fixed;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid #ff6b6b;
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 80%;
+                max-height: 80%;
+                overflow-y: auto;
+                z-index: 1000;
+                color: #e0e0ff;
+            `;
+            
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            
+            panel.innerHTML = `
+                <h3 style="color: #ff6b6b; margin-bottom: 15px;">🎭 Orchestration Scenario Results</h3>
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(0,255,170,0.1); border-radius: 5px;">
+                    <strong>Success Rate: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)</strong>
+                </div>
+                ${results.map(result => `
+                    <div style="margin: 10px 0; padding: 10px; background: rgba(${result.success ? '0,255,170' : '255,68,68'},0.1); border-radius: 5px;">
+                        <div style="font-weight: bold; color: ${result.success ? '#00ffaa' : '#ff4444'};">
+                            ${result.success ? '✅' : '❌'} ${result.name}
+                        </div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">
+                            ${result.duration ? `Duration: ${result.duration}ms` : ''}
+                            ${result.error ? `Error: ${result.error}` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+                <button onclick="this.parentElement.remove()" style="
+                    background: #ff6b6b; border: none; color: white; padding: 8px 16px;
+                    border-radius: 5px; margin-top: 15px; cursor: pointer;">Close</button>
+            `;
+            
+            document.body.appendChild(panel);
+        }
+
+        function showPromptTestResults(results) {
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                position: fixed;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid #00ffaa;
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 80%;
+                max-height: 80%;
+                overflow-y: auto;
+                z-index: 1000;
+                color: #e0e0ff;
+            `;
+            
+            const allTests = Object.values(results).flat();
+            const successCount = allTests.filter(t => t.success).length;
+            const totalCount = allTests.length;
+            
+            panel.innerHTML = `
+                <h3 style="color: #00ffaa; margin-bottom: 15px;">🧪 Agent Prompt Test Results</h3>
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(138,43,226,0.1); border-radius: 5px;">
+                    <strong>Overall Success Rate: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)</strong>
+                </div>
+                ${Object.entries(results).map(([agentId, tests]) => {
+                    const agentSuccess = tests.filter(t => t.success).length;
+                    const agentTotal = tests.length;
+                    return `
+                        <div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                            <h4 style="color: #8a2be2; margin-bottom: 10px;">
+                                🤖 ${agentId.toUpperCase()} - ${agentSuccess}/${agentTotal} passed
+                            </h4>
+                            ${tests.map(test => `
+                                <div style="margin: 5px 0; padding: 5px; background: rgba(${test.success ? '0,255,170' : '255,68,68'},0.1); border-radius: 3px;">
+                                    <span style="color: ${test.success ? '#00ffaa' : '#ff4444'};">
+                                        ${test.success ? '✅' : '❌'} ${test.prompt}
+                                    </span>
+                                    ${test.duration ? `<span style="font-size: 0.7em; margin-left: 10px;">(${test.duration}ms)</span>` : ''}
+                                    ${test.error ? `<div style="font-size: 0.7em; color: #ff4444; margin-top: 2px;">${test.error}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }).join('')}
+                <button onclick="this.parentElement.remove()" style="
+                    background: #00ffaa; border: none; color: black; padding: 8px 16px;
+                    border-radius: 5px; margin-top: 15px; cursor: pointer;">Close</button>
+            `;
+            
+            document.body.appendChild(panel);
+        }
+
         // Initialize orchestrator
         const orchestrator = new AgentOrchestrator();
         
@@ -1118,6 +2304,7 @@
             orchestrator.log('🤖 8 AI agents ready for multi-model coordination', 'system');
             orchestrator.log('🔐 Secrets management systems active', 'system');
             orchestrator.log('🚀 Ready for swarm intelligence deployment', 'system');
+            updateApiKeyStatus(); // Update API key status on load
         }, 1000);
         
         console.log('🌀 Multi-LLM Agent Orchestrator initialized');

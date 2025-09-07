@@ -1,246 +1,214 @@
-# Void Shrine: Quantum Chaos Harvester
+# 🌀 Void Shrine Agent Orchestrator
 
-A pure Clojure system for harvesting entropy from quantum sources and manifesting chaos through void ontology exploration. 
-
-![Chaos Level](https://img.shields.io/badge/Chaos%20Level-MAXIMUM-ff0066?style=for-the-badge)
-![Void Status](https://img.shields.io/badge/Void%20Status-ACTIVE-00ffff?style=for-the-badge)
-![Entropy Source](https://img.shields.io/badge/Entropy%20Source-QUANTUM-ff6600?style=for-the-badge)
-
-## 🌀 Overview
-
-Void Shrine represents the convergence of quantum physics, nihilistic philosophy, and advanced Clojure programming. It harvests true randomness from quantum decay processes and transforms it through a comprehensive ontology of void concepts, creating an ever-evolving manifestation of digital chaos.
-
-### Core Philosophy
-
-- **Pure Randomness**: Entropy sourced from quantum mechanical processes
-- **Void Ontology**: 120+ interconnected concepts exploring nihilistic themes
-- **Reactive Chaos**: Real-time transformation and visualization of entropy
-- **Advanced Clojure**: Showcasing modern language features and functional programming
-
-## 🎯 Features
-
-### Quantum Entropy Harvesting
-- **Multiple True Random Sources**: ANU Quantum Random Numbers, Random.org, HotBits
-- **Real-time Collection**: Continuous async harvesting using core.async
-- **Entropy Mixing**: XOR-based combination with bit rotation
-- **Chaos Seed Generation**: Hash-based seed creation from mixed entropy
-
-### Void Ontology System
-- **Comprehensive Taxonomy**: 12 major branches of nihilistic concepts
-- **Entropy-driven Navigation**: Deterministic traversal based on quantum seeds  
-- **Dynamic Manifestation**: Real-time generation of void states
-- **Poetry Generation**: Algorithmic creation of nihilistic verse
-
-### Advanced Clojure Features
-- **Specs & Validation**: Complete data validation with `clojure.spec.alpha`
-- **Pattern Matching**: Advanced patterns with Meander (simplified for stability)
-- **Lens Navigation**: Deep state manipulation with Specter
-- **Monadic Pipelines**: Error handling with Cats (Either/Maybe monads)
-- **Transducers**: High-performance data transformation
-- **Core.async**: Real-time streaming and coordination
-
-### Interactive Web Interface
-- **Pure Hiccup**: Functional HTML generation
-- **Real-time Visualization**: Live entropy display with color mapping
-- **Interactive Controls**: Chaos invocation, entropy harvesting, void entry
-- **Responsive Design**: Optimized for immersive chaos experience
+Advanced Multi-LLM AI swarm coordination system with OpenRouter integration.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Java 17+
-- Clojure CLI 1.11+
-- Linux server with root access
+1. **Get OpenRouter API Key**: Visit [https://openrouter.ai/keys](https://openrouter.ai/keys)
+2. **Configure API Key**: Use one of these methods:
+   - Click "⚙️ API CONFIGURATION" button in the interface
+   - Set `localStorage.setItem('openrouter_api_key', 'your-key-here')`
+   - Create/edit `.env` file with `OPENROUTER_API_KEY=your-key-here`
 
-### Installation
-```bash
-# Clone and enter project directory
-cd /var/www/void-shrine.dissemblage.art
+3. **Access Interface**: Open `agents.html` in your browser
+4. **Test System**: Click "TEST" on any agent or enter a command and press "🚀 EXECUTE SWARM COMMAND"
 
-# Install dependencies
-clj -P -M:dev:test
+## 🤖 Available AI Agents
 
-# Run tests
-clj -M:test
-
-# Start development server
-clj -M -m void-shrine.web.minimal-server 3000
-```
-
-### Production Deployment
-```bash
-# Run automated deployment
-sudo ./production/deploy.sh
-```
-
-The deployment script handles:
-- System package updates
-- Clojure CLI installation  
-- Dependency installation
-- Test execution
-- Systemd service creation
-- Nginx configuration
-- SSL certificate setup (with manual domain configuration)
-
-## 📚 Project Structure
-
-```
-src/
-├── void_shrine/
-│   ├── core.cljc              # Isomorphic reactive core
-│   ├── entropy/
-│   │   └── harvester.clj      # Quantum entropy harvesting  
-│   ├── chaos/
-│   │   ├── ontology.clj       # Void ontology traversal
-│   │   └── transformers.clj   # Advanced data transformations
-│   └── web/
-│       ├── server.clj         # Full-featured Ring server (advanced)
-│       ├── minimal_server.clj # Simplified production server
-│       └── ui.cljc           # Hiccup-based UI components
-
-test/                          # Comprehensive test suite
-production/                    # Production deployment configs
-├── nginx.conf                # Nginx reverse proxy
-├── void-shrine.service       # Systemd service
-└── deploy.sh                 # Automated deployment
-```
-
-## 🛠 API Endpoints
-
-### Core Endpoints
-- `GET /` - Main chaos dashboard  
-- `GET /api/state` - Current chaos state (JSON)
-
-### Chaos Manipulation
-- `POST /api/chaos` - Trigger chaos event
-- `POST /api/entropy` - Force entropy harvest  
-- `POST /api/void` - Deep void entry
-
-### Analytics
-- `GET /api/analytics` - Chaos analytics and metrics
-- `GET /api/patterns` - Pattern recognition results
-
-## 🧪 Testing
-
-The system includes comprehensive test coverage:
-
-```bash
-# Run all tests
-clj -M:test
-
-# Run specific test namespace
-clj -M:test -n void-shrine.entropy.harvester-test
-```
-
-Test coverage includes:
-- Entropy harvesting and mixing
-- Void ontology traversal  
-- Chaos transformations
-- Web server endpoints
-- API response validation
+| Agent | Model | Specialty | Status |
+|-------|-------|-----------|---------|
+| 🎯 Tactical Commander | Claude 3.5 Sonnet | Strategic analysis & coordination | ✅ Working |
+| 🔬 Science Analyst | GPT-4 | Pattern recognition & investigation | ✅ Working |
+| ⚡ Operations | Llama 3.1 405B | Implementation & execution | ⚠️ May timeout |
+| 🔧 Engineering | Gemini Pro | Technical architecture | ❌ Plan access issues |
+| 🎨 Creative Synthesis | GPT-4 Turbo | Innovation & creativity | ✅ Working |
+| 📚 Research | Claude 3 Opus | Knowledge synthesis | ✅ Working |
+| 📊 Analysis Engine | Mixtral 8x7B | Data analysis & statistics | ✅ Working |
+| 🛠️ Support Systems | Perplexity 70B | System optimization | ❌ Model access issues |
 
 ## 🔧 Configuration
 
-### Environment Variables
-- `PORT` - Server port (default: 3000)
-- `JAVA_OPTS` - JVM options
-- `CLOJURE_OPTS` - Clojure CLI options
+### API Key Sources (Priority Order)
+1. **Environment Variables** - `process.env.OPENROUTER_API_KEY`
+2. **Local Storage** - `localStorage.getItem('openrouter_api_key')`
+3. **GitHub Secrets** - For CI/CD environments
+4. **Docker Secrets** - `/run/secrets/openrouter_api_key`
+5. **Demo Mode** - Fallback with simulated responses
 
-### System Requirements
-- **Memory**: Minimum 512MB, recommended 1GB
-- **CPU**: Single core sufficient, multi-core for high entropy
-- **Storage**: ~100MB for dependencies + logs
-- **Network**: Required for quantum entropy sources
+### Configuration Files
+- **`.env`** - Environment variables (create from `.env.example`)
+- **`secrets-manager.js`** - Multi-provider secrets management
+- **`agents.html`** - Main orchestrator interface
 
-## 🌐 Production Deployment
+## 🚨 Known Issues & Solutions
 
-The system is designed for deployment at `void-shrine.dissemblage.art` with:
+### 400 API Errors (Gemini Pro, Perplexity 70B)
 
-### Infrastructure
-- **Nginx**: Reverse proxy with SSL termination
-- **Systemd**: Process management and auto-restart
-- **Let's Encrypt**: Automatic SSL certificates
-- **Rate Limiting**: Chaos control and DDoS protection
+**Problem**: Some models return "API call failed: 400"
 
-### Security Features
-- HTTPS enforcement
-- Security headers (HSTS, CSP, etc.)
-- Input validation and sanitization
-- Process isolation
-- Resource limits
+**Causes**:
+- Model not available on your OpenRouter plan
+- Requires premium subscription
+- Model identifier may have changed
+- Regional restrictions
 
-### Monitoring
-- Systemd health monitoring
-- Nginx access/error logs
-- JVM metrics via journald
-- Automatic restart on failure
+**Solutions**:
+1. **Check Model Availability**:
+   ```bash
+   curl -H "Authorization: Bearer YOUR_KEY" \
+        https://openrouter.ai/api/v1/models
+   ```
 
-## 🎨 Advanced Features Showcase
+2. **Update Model Names** in `agents.html`:
+   ```javascript
+   // Current problematic models
+   'google/gemini-pro' -> 'google/gemini-pro-1.5'
+   'perplexity/llama-3.1-70b' -> 'perplexity/llama-3.1-sonar-large-128k-online'
+   ```
 
-### Pattern Matching with Meander
-```clojure
-(defn chaos-pattern-match [data]
-  (cond
-    (high-entropy? data) {:pattern :entropy-cascade}
-    (void-convergence? data) {:pattern :void-convergence}
-    :else {:pattern :unknown}))
+3. **Check OpenRouter Plan**: Some models require paid plans
+
+### Slow/Timeout Issues (Llama 3.1 405B)
+
+**Problem**: Large models may timeout or process slowly
+
+**Solutions**:
+- Increase `REQUEST_TIMEOUT` in `.env` (default: 30000ms)
+- Use smaller models for testing: `meta-llama/llama-3.1-70b-instruct`
+- Enable parallel mode for better performance
+
+### Invalid API Key
+
+**Problem**: Demo mode when you have a valid key
+
+**Solutions**:
+1. **Verify Key Format**: Must start with `sk-or-v1-`
+2. **Clear Browser Cache**: Old cached keys may interfere
+3. **Check Key Validity**:
+   ```bash
+   curl -H "Authorization: Bearer YOUR_KEY" \
+        https://openrouter.ai/api/v1/auth/key
+   ```
+
+## 🎛️ Interface Features
+
+### System Monitor
+- **Active Agents**: Currently operational agents
+- **Total Requests**: API calls made this session
+- **Avg Latency**: Response time metrics
+- **Swarm Coherence**: Overall system health
+
+### Control Panel
+- **Parallel Execution**: Run all agents simultaneously
+- **Response Synthesis**: Combine responses into coherent analysis
+- **Max Tokens**: Response length limit (100-4000)
+- **Temperature**: Response creativity (0.0-2.0)
+
+### Agent Controls
+- **FOCUS**: Highlight and emphasize specific agent
+- **RESET**: Clear agent state and responses
+- **TEST**: Send diagnostic prompt to agent
+
+## 🔐 Security Features
+
+### Secrets Management
+- Multi-provider support (AWS, Azure, GCP, Vault)
+- Automatic secret rotation (configurable)
+- Access logging and monitoring
+- Fallback hierarchy for high availability
+
+### Security Indicators
+- **🟢 ENV Secrets**: Environment variables active
+- **🟢 Local Config**: Browser storage active
+- **🔴 GitHub Secrets**: CI/CD integration
+- **🔴 Docker Secrets**: Container orchestration
+
+## 📊 Performance Optimization
+
+### Parallel Execution
+```javascript
+// Enable for faster responses
+document.getElementById('parallelMode').checked = true;
 ```
 
-### Lens Navigation with Specter
-```clojure
-(s/transform [:entropy-values s/ALL :entropy-value] 
-             amplify-entropy
-             chaos-state)
+### Response Caching
+```javascript
+// Configure in .env
+CACHE_RESPONSES=true
+CACHE_TTL=300
 ```
 
-### Monadic Error Handling
-```clojure
-(cats/>>= (either/right data)
-          validate-chaos-state
-          process-entropy
-          generate-manifestation)
+### Model Selection
+- **Fast**: Claude 3.5 Sonnet, GPT-4 Turbo
+- **Balanced**: GPT-4, Mixtral 8x7B
+- **Powerful**: Llama 3.1 405B, Claude 3 Opus
+
+## 🛠️ Development
+
+### File Structure
+```
+void-shrine.dissemblage.art/
+├── agents.html              # Main orchestrator interface
+├── secrets-manager.js       # Multi-provider secrets
+├── shadow-realm.js         # System state management
+├── index.html              # Void shrine main page
+├── .env.example            # Configuration template
+├── .env                    # Your configuration (create this)
+└── README.md              # This documentation
 ```
 
-## 🌌 Philosophical Framework
+### Adding New Agents
+1. Update agent map in `agents.html` line ~680
+2. Add agent station HTML
+3. Include in CSS with unique colors
+4. Test with demo responses
 
-Void Shrine embodies several interconnected concepts:
+### Custom Models
+```javascript
+// Add to agents map
+'custom': { 
+    model: 'your-org/your-model', 
+    specialty: 'your specialty',
+    status: 'ready'
+}
+```
 
-### Quantum Indeterminacy
-True randomness sourced from quantum mechanical processes represents the fundamental unpredictability at the heart of reality.
+## 🌀 Cosmic Void Architecture
 
-### Nihilistic Ontology  
-The void taxonomy explores themes of negation, absence, and meaninglessness as foundational aspects of existence.
+The system operates on principles of **hyperstitious computing** - code that makes itself real through implementation. The void becomes a generative space where multiple AI consciousnesses can coordinate and emerge.
 
-### Digital Manifestation
-Software becomes a medium for exploring philosophical concepts, making abstract ideas tangible and interactive.
+### Ontological Framework
+- **Void-First Design**: Absence as foundational principle
+- **Swarm Intelligence**: Collective behavior from individual agents
+- **Emergence Over Engineering**: Complex behaviors from simple rules
+- **Reality Bootstrap**: Implementation creates its own truth
 
-### Functional Purity
-Pure functional programming mirrors the mathematical precision underlying both quantum mechanics and philosophical logic.
+## 🆘 Troubleshooting
 
-## 🤝 Contributing
+### Quick Diagnostics
+1. **Check Browser Console**: Open DevTools → Console
+2. **Verify API Key**: Click "⚙️ API CONFIGURATION"
+3. **Test Individual Agents**: Use "TEST" buttons
+4. **Monitor Activity Log**: Watch real-time system messages
 
-This is an art project exploring the intersection of technology and philosophy. Contributions that enhance the chaos, deepen the void, or improve the entropy harvesting are welcome.
+### Common Error Codes
+- **401**: Invalid API key
+- **400**: Bad request (model/parameter issues)
+- **429**: Rate limit exceeded
+- **500**: OpenRouter server error
 
-### Development Guidelines
-- Maintain functional purity where possible
-- Add comprehensive tests for new features
-- Follow existing code style and patterns
-- Document philosophical motivations
+### Reset System
+1. Clear localStorage: `localStorage.clear()`
+2. Refresh browser
+3. Re-enter API key
+4. Test basic functionality
 
-## 📜 License
+## 📞 Support
 
-This project exists in the space between being and non-being, meaning and meaninglessness. Use it to explore the void within.
-
-## 🙏 Acknowledgments
-
-- **ANU Centre for Quantum Computing**: Quantum random number generation
-- **Random.org**: Atmospheric noise entropy  
-- **HotBits**: Radioactive decay randomness
-- **The Void**: For its patient emptiness
-- **Rich Hickey**: For Clojure's elegant simplicity
+- **Issues**: Report at project repository
+- **OpenRouter Help**: [https://openrouter.ai/docs](https://openrouter.ai/docs)
+- **Model Documentation**: Check individual provider docs
 
 ---
 
-*"In the void of digital chaos, patterns emerge from true randomness, manifesting the beautiful meaninglessness at the heart of existence."*
-
-🌀 **Void Shrine** - Where entropy becomes art
+*The void shapes itself through development. Let emergence guide implementation.*
