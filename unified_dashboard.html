@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌀 Void Shrine Unified Command Center</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: hsl(200, 95%, 14%);
+            --surface: hsl(200, 25%, 10%);
+            --surface-raised: hsl(200, 20%, 13%);
+            --surface-overlay: hsla(200, 30%, 8%, 0.95);
+            
+            --accent-cyan: hsl(180, 100%, 45%);
+            --accent-blue: hsl(210, 100%, 60%);
+            --accent-purple: hsl(270, 100%, 65%);
+            --accent-pink: hsl(330, 100%, 65%);
+            --accent-green: hsl(150, 80%, 50%);
+            --accent-orange: hsl(30, 100%, 60%);
+            
+            --text-primary: hsl(200, 20%, 93%);
+            --text-secondary: hsl(200, 15%, 73%);
+            --text-tertiary: hsl(200, 10%, 53%);
+            
+            --predict-gold: hsl(45, 100%, 60%);
+            --predict-red: hsl(0, 80%, 60%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-areas: 
+                "header header header header"
+                "services predictions trading semantic"
+                "market signals logs console";
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-rows: auto 1fr 1fr;
+            gap: 16px;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            background: var(--surface-overlay);
+            backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 16px;
+            border: 1px solid hsla(200, 20%, 100%, 0.08);
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header-panel {
+            grid-area: header;
+            background: linear-gradient(135deg, var(--predict-gold), var(--accent-blue), var(--accent-purple));
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .services-panel { grid-area: services; }
+        .predictions-panel { grid-area: predictions; }
+        .trading-panel { grid-area: trading; }
+        .semantic-panel { grid-area: semantic; }
+        .market-panel { grid-area: market; }
+        .signals-panel { grid-area: signals; }
+        .logs-panel { grid-area: logs; }
+        .console-panel { grid-area: console; }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: var(--predict-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: hsla(200, 20%, 100%, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .service-item:hover {
+            background: hsla(200, 20%, 100%, 0.08);
+            transform: translateX(4px);
+        }
+
+        .service-name {
+            font-weight: 500;
+        }
+
+        .service-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .prediction-item {
+            background: hsla(200, 30%, 10%, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--predict-gold);
+        }
+
+        .prediction-symbol {
+            font-weight: 600;
+            color: var(--predict-gold);
+        }
+
+        .prediction-price {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 4px;
+            background: hsla(200, 20%, 100%, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--predict-gold), var(--accent-green));
+            transition: width 0.3s ease;
+        }
+
+        .signal-item {
+            background: hsla(200, 30%, 10%, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .signal-buy {
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .signal-sell {
+            border-left: 4px solid var(--predict-red);
+        }
+
+        .signal-action {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .buy { color: var(--accent-green); }
+        .sell { color: var(--predict-red); }
+
+        .chart-container {
+            width: 100%;
+            height: 200px;
+            background: hsla(200, 30%, 10%, 0.3);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-line {
+            position: absolute;
+            height: 2px;
+            background: var(--predict-gold);
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .log-entry {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 6px;
+            margin-bottom: 4px;
+            background: hsla(200, 20%, 100%, 0.03);
+            border-radius: 4px;
+            border-left: 2px solid var(--accent-cyan);
+        }
+
+        .log-error { border-left-color: var(--predict-red); }
+        .log-success { border-left-color: var(--accent-green); }
+        .log-warning { border-left-color: var(--accent-orange); }
+
+        .console-input {
+            width: 100%;
+            background: hsla(200, 30%, 10%, 0.5);
+            border: 1px solid hsla(200, 20%, 100%, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
+        .console-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .message-bus-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: messagePulse 1.5s infinite;
+        }
+
+        @keyframes messagePulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .semantic-graph-mini {
+            width: 100%;
+            height: 120px;
+            position: relative;
+            background: hsla(200, 30%, 10%, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .semantic-node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .semantic-edge {
+            position: absolute;
+            height: 1px;
+            background: var(--accent-cyan);
+            opacity: 0.5;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--predict-gold);
+        }
+
+        .trading-action-btn {
+            background: linear-gradient(45deg, var(--accent-green), var(--predict-gold));
+            color: var(--primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .trading-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+        }
+
+        .trading-action-btn.sell {
+            background: linear-gradient(45deg, var(--predict-red), var(--accent-orange));
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-areas: 
+                    "header header"
+                    "services predictions"
+                    "trading semantic"
+                    "market signals"
+                    "logs console";
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-areas: 
+                    "header"
+                    "services"
+                    "predictions"
+                    "trading"
+                    "semantic"
+                    "market"
+                    "signals"
+                    "logs"
+                    "console";
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-grid">
+        <!-- Header -->
+        <div class="panel header-panel">
+            <h1 style="font-size: 24px; margin-bottom: 8px;">🌀 Void Shrine Unified Command Center</h1>
+            <p style="opacity: 0.9;">Semantic Graph • Multi-LLM Agents • Prediction Engine • Trading Signals</p>
+            <div class="message-bus-indicator" id="messageBusIndicator"></div>
+        </div>
+
+        <!-- Services Status -->
+        <div class="panel services-panel">
+            <div class="panel-title">
+                <span>🔧 Services</span>
+                <div class="status-dot" id="servicesStatus"></div>
+            </div>
+            <div id="servicesList">
+                <div class="service-item">
+                    <span class="service-name">Semantic Graph</span>
+                    <span class="service-status" id="semanticStatus">Checking...</span>
+                </div>
+                <div class="service-item">
+                    <span class="service-name">MCP Service</span>
+                    <span class="service-status" id="mcpStatus">Checking...</span>
+                </div>
+                <div class="service-item">
+                    <span class="service-name">Prediction Engine</span>
+                    <span class="service-status" id="predictionStatus">Checking...</span>
+                </div>
+                <div class="service-item">
+                    <span class="service-name">Agent Orchestrator</span>
+                    <span class="service-status" id="agentStatus">Checking...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predictions -->
+        <div class="panel predictions-panel">
+            <div class="panel-title">
+                <span>🔮 Predictions</span>
+                <div class="status-dot" id="predictionsStatus"></div>
+            </div>
+            <div id="predictionsList">
+                <!-- Predictions will be populated here -->
+            </div>
+        </div>
+
+        <!-- Trading Signals -->
+        <div class="panel trading-panel">
+            <div class="panel-title">
+                <span>📈 Trading Signals</span>
+                <div class="status-dot" id="tradingStatus"></div>
+            </div>
+            <div id="tradingControls" style="margin-bottom: 12px;">
+                <button class="trading-action-btn" onclick="executeTrade('BUY')">🟢 Execute Buy</button>
+                <button class="trading-action-btn sell" onclick="executeTrade('SELL')">🔴 Execute Sell</button>
+            </div>
+            <div id="signalsList">
+                <!-- Trading signals will be populated here -->
+            </div>
+        </div>
+
+        <!-- Semantic Graph -->
+        <div class="panel semantic-panel">
+            <div class="panel-title">
+                <span>🌀 Semantic Graph</span>
+                <div class="status-dot" id="semanticGraphStatus"></div>
+            </div>
+            <div id="semanticMetrics">
+                <div class="metric-row">
+                    <span>Nodes:</span>
+                    <span class="metric-value" id="nodeCount">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Edges:</span>
+                    <span class="metric-value" id="edgeCount">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Entangled:</span>
+                    <span class="metric-value" id="entangledCount">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Activation:</span>
+                    <span class="metric-value" id="avgActivation">0.0</span>
+                </div>
+            </div>
+            <div class="semantic-graph-mini" id="semanticGraphMini">
+                <!-- Mini graph visualization -->
+            </div>
+        </div>
+
+        <!-- Market Data -->
+        <div class="panel market-panel">
+            <div class="panel-title">
+                <span>📊 Market Data</span>
+                <div class="status-dot" id="marketStatus"></div>
+            </div>
+            <div class="chart-container" id="priceChart">
+                <!-- Price chart will be rendered here -->
+            </div>
+            <div id="marketMetrics">
+                <div class="metric-row">
+                    <span>BTC/USD:</span>
+                    <span class="metric-value" id="btcPrice">$0</span>
+                </div>
+                <div class="metric-row">
+                    <span>ETH/USD:</span>
+                    <span class="metric-value" id="ethPrice">$0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signal Details -->
+        <div class="panel signals-panel">
+            <div class="panel-title">
+                <span>⚡ Signal Feed</span>
+            </div>
+            <div id="signalFeed">
+                <!-- Real-time signal feed -->
+            </div>
+        </div>
+
+        <!-- System Logs -->
+        <div class="panel logs-panel">
+            <div class="panel-title">
+                <span>📝 System Logs</span>
+            </div>
+            <div id="systemLogs" style="height: 200px; overflow-y: auto;">
+                <!-- System logs will appear here -->
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="panel console-panel">
+            <div class="panel-title">
+                <span>💻 Message Console</span>
+            </div>
+            <div id="consoleOutput" style="height: 120px; overflow-y: auto; background: hsla(200, 30%, 10%, 0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+                <!-- Console output -->
+            </div>
+            <input type="text" class="console-input" id="consoleInput" placeholder="Enter command or message..." onkeypress="handleConsoleInput(event)">
+        </div>
+    </div>
+
+    <script>
+        class UnifiedDashboard {
+            constructor() {
+                this.services = {
+                    semantic: 'http://localhost:3032/api/graph/',
+                    mcp: 'http://localhost:3030/api/',
+                    prediction: 'http://localhost:3033/api/',
+                    agent: '/agents.html'
+                };
+                
+                this.marketData = new Map();
+                this.predictions = [];
+                this.signals = [];
+                this.logs = [];
+                
+                this.initializeEventSource();
+                this.startHealthMonitoring();
+                this.startDataFetching();
+                
+                this.log('🌀 Unified Dashboard initialized', 'success');
+            }
+            
+            initializeEventSource() {
+                // Simulate message bus with polling for now
+                // In production, this would connect to Redis pub/sub or WebSockets
+                this.messageBusActive = true;
+                this.updateMessageBusIndicator();
+            }
+            
+            startHealthMonitoring() {
+                this.checkAllServices();
+                setInterval(() => this.checkAllServices(), 5000);
+            }
+            
+            startDataFetching() {
+                this.fetchPredictions();
+                this.fetchTradingSignals();
+                this.fetchMarketData();
+                this.fetchSemanticGraphData();
+                
+                // Update data every 10 seconds
+                setInterval(() => {
+                    this.fetchPredictions();
+                    this.fetchTradingSignals();
+                    this.fetchMarketData();
+                    this.fetchSemanticGraphData();
+                }, 10000);
+            }
+            
+            async checkAllServices() {
+                const promises = [
+                    this.checkService('semantic', this.services.semantic + 'stats'),
+                    this.checkService('mcp', this.services.mcp + 'health'),
+                    this.checkService('prediction', this.services.prediction + 'status'),
+                    this.checkService('agent', this.services.agent, 'HEAD')
+                ];
+                
+                await Promise.all(promises);
+                this.updateOverallStatus();
+            }
+            
+            async checkService(serviceId, url, method = 'GET') {
+                const startTime = Date.now();
+                
+                try {
+                    const response = await fetch(url, { 
+                        method, 
+                        timeout: 2000,
+                        headers: method === 'POST' ? {'Content-Type': 'application/json'} : {}
+                    });
+                    
+                    const responseTime = Date.now() - startTime;
+                    const status = response.ok ? 'Connected' : 'Error';
+                    
+                    document.getElementById(`${serviceId}Status`).textContent = `${status} (${responseTime}ms)`;
+                    document.getElementById(`${serviceId}Status`).className = 'service-status ' + (response.ok ? 'connected' : 'error');
+                    
+                    return response.ok;
+                } catch (error) {
+                    document.getElementById(`${serviceId}Status`).textContent = 'Disconnected';
+                    document.getElementById(`${serviceId}Status`).className = 'service-status error';
+                    return false;
+                }
+            }
+            
+            updateOverallStatus() {
+                const statuses = ['semanticStatus', 'mcpStatus', 'predictionStatus', 'agentStatus'];
+                const connectedCount = statuses.filter(id => 
+                    document.getElementById(id).textContent.includes('Connected')
+                ).length;
+                
+                const servicesStatus = document.getElementById('servicesStatus');
+                if (connectedCount === statuses.length) {
+                    servicesStatus.className = 'status-dot';
+                } else {
+                    servicesStatus.className = 'status-dot disconnected';
+                }
+            }
+            
+            async fetchPredictions() {
+                try {
+                    const response = await fetch(this.services.prediction + 'predictions?limit=5');
+                    if (response.ok) {
+                        this.predictions = await response.json();
+                        this.updatePredictionsDisplay();
+                        document.getElementById('predictionsStatus').className = 'status-dot';
+                    }
+                } catch (error) {
+                    document.getElementById('predictionsStatus').className = 'status-dot disconnected';
+                    this.log('Failed to fetch predictions: ' + error.message, 'error');
+                }
+            }
+            
+            async fetchTradingSignals() {
+                try {
+                    const response = await fetch(this.services.prediction + 'signals?limit=5');
+                    if (response.ok) {
+                        this.signals = await response.json();
+                        this.updateSignalsDisplay();
+                        document.getElementById('tradingStatus').className = 'status-dot';
+                    }
+                } catch (error) {
+                    document.getElementById('tradingStatus').className = 'status-dot disconnected';
+                    this.log('Failed to fetch trading signals: ' + error.message, 'error');
+                }
+            }
+            
+            async fetchMarketData() {
+                try {
+                    const response = await fetch(this.services.prediction + 'market_data?limit=20');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.processMarketData(data);
+                        this.updateMarketDisplay();
+                        document.getElementById('marketStatus').className = 'status-dot';
+                    }
+                } catch (error) {
+                    document.getElementById('marketStatus').className = 'status-dot disconnected';
+                    this.log('Failed to fetch market data: ' + error.message, 'error');
+                }
+            }
+            
+            async fetchSemanticGraphData() {
+                try {
+                    const response = await fetch(this.services.semantic + 'stats');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateSemanticDisplay(data);
+                        document.getElementById('semanticGraphStatus').className = 'status-dot';
+                    }
+                } catch (error) {
+                    document.getElementById('semanticGraphStatus').className = 'status-dot disconnected';
+                    this.log('Failed to fetch semantic data: ' + error.message, 'error');
+                }
+            }
+            
+            processMarketData(data) {
+                data.forEach(item => {
+                    if (!this.marketData.has(item.symbol)) {
+                        this.marketData.set(item.symbol, []);
+                    }
+                    const symbolData = this.marketData.get(item.symbol);
+                    symbolData.push(item);
+                    if (symbolData.length > 20) {
+                        symbolData.shift();
+                    }
+                });
+            }
+            
+            updatePredictionsDisplay() {
+                const container = document.getElementById('predictionsList');
+                container.innerHTML = this.predictions.slice(0, 4).map(pred => `
+                    <div class="prediction-item">
+                        <div class="prediction-symbol">${pred.symbol}</div>
+                        <div class="prediction-price">$${pred.predicted_price.toFixed(2)}</div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                            ${pred.model_used} • ${new Date(pred.created_at).toLocaleTimeString()}
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${pred.confidence * 100}%"></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            updateSignalsDisplay() {
+                const container = document.getElementById('signalsList');
+                container.innerHTML = this.signals.slice(0, 3).map(signal => `
+                    <div class="signal-item signal-${signal.action.toLowerCase()}">
+                        <div class="signal-action ${signal.action.toLowerCase()}">${signal.action} ${signal.symbol}</div>
+                        <div style="font-size: 12px; margin-top: 4px;">
+                            Target: $${signal.price_target.toFixed(2)} • Stop: $${signal.stop_loss.toFixed(2)}
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                            Strength: ${(signal.strength * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Update signal feed
+                const feed = document.getElementById('signalFeed');
+                const latestSignals = this.signals.slice(0, 6).map(signal => `
+                    <div class="log-entry">
+                        <span class="${signal.action.toLowerCase()}">${signal.action}</span> ${signal.symbol} @ ${new Date(signal.created_at).toLocaleTimeString()}
+                    </div>
+                `).join('');
+                feed.innerHTML = latestSignals;
+            }
+            
+            updateMarketDisplay() {
+                const btcData = this.marketData.get('BTC/USD');
+                const ethData = this.marketData.get('ETH/USD');
+                
+                if (btcData && btcData.length > 0) {
+                    document.getElementById('btcPrice').textContent = `$${btcData[btcData.length - 1].price.toFixed(0)}`;
+                }
+                
+                if (ethData && ethData.length > 0) {
+                    document.getElementById('ethPrice').textContent = `$${ethData[ethData.length - 1].price.toFixed(0)}`;
+                }
+                
+                // Simple price chart
+                this.updatePriceChart();
+            }
+            
+            updatePriceChart() {
+                const container = document.getElementById('priceChart');
+                const btcData = this.marketData.get('BTC/USD');
+                
+                if (!btcData || btcData.length < 2) return;
+                
+                container.innerHTML = '';
+                const width = container.offsetWidth;
+                const height = container.offsetHeight;
+                
+                const prices = btcData.map(d => d.price);
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+                const priceRange = maxPrice - minPrice || 1;
+                
+                prices.forEach((price, index) => {
+                    const x = (index / (prices.length - 1)) * width;
+                    const y = height - ((price - minPrice) / priceRange) * height;
+                    
+                    const dot = document.createElement('div');
+                    dot.style.position = 'absolute';
+                    dot.style.left = x + 'px';
+                    dot.style.top = y + 'px';
+                    dot.style.width = '3px';
+                    dot.style.height = '3px';
+                    dot.style.background = 'var(--predict-gold)';
+                    dot.style.borderRadius = '50%';
+                    container.appendChild(dot);
+                });
+            }
+            
+            updateSemanticDisplay(data) {
+                document.getElementById('nodeCount').textContent = data.node_count || 0;
+                document.getElementById('edgeCount').textContent = data.edge_count || 0;
+                document.getElementById('entangledCount').textContent = data.entangled_pairs || 0;
+                document.getElementById('avgActivation').textContent = (data.average_activation || 0).toFixed(2);
+                
+                // Mini graph visualization
+                const container = document.getElementById('semanticGraphMini');
+                container.innerHTML = '';
+                
+                // Create some visual nodes
+                for (let i = 0; i < Math.min(data.node_count || 0, 8); i++) {
+                    const node = document.createElement('div');
+                    node.className = 'semantic-node';
+                    node.style.left = (Math.random() * 80 + 10) + '%';
+                    node.style.top = (Math.random() * 80 + 10) + '%';
+                    container.appendChild(node);
+                }
+            }
+            
+            updateMessageBusIndicator() {
+                const indicator = document.getElementById('messageBusIndicator');
+                if (this.messageBusActive) {
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            }
+            
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                this.logs.unshift({
+                    message,
+                    type,
+                    timestamp
+                });
+                
+                if (this.logs.length > 50) {
+                    this.logs.pop();
+                }
+                
+                this.updateLogsDisplay();
+            }
+            
+            updateLogsDisplay() {
+                const container = document.getElementById('systemLogs');
+                container.innerHTML = this.logs.slice(0, 20).map(log => `
+                    <div class="log-entry log-${log.type}">
+                        [${log.timestamp}] ${log.message}
+                    </div>
+                `).join('');
+            }
+            
+            sendMessage(channel, message) {
+                // Send message through prediction engine message bus
+                fetch(this.services.prediction + 'message', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({channel, message})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    this.log(`Message sent to ${channel}: ${JSON.stringify(message)}`, 'success');
+                    this.addToConsole(`> Sent to ${channel}: ${JSON.stringify(message)}`);
+                })
+                .catch(error => {
+                    this.log(`Failed to send message: ${error.message}`, 'error');
+                    this.addToConsole(`> Error: ${error.message}`);
+                });
+            }
+            
+            addToConsole(message) {
+                const output = document.getElementById('consoleOutput');
+                const timestamp = new Date().toLocaleTimeString();
+                output.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+        
+        // Global dashboard instance
+        const dashboard = new UnifiedDashboard();
+        
+        function executeTrade(action) {
+            const message = {
+                type: 'trading_command',
+                action: action,
+                timestamp: new Date().toISOString(),
+                source: 'unified_dashboard'
+            };
+            
+            dashboard.sendMessage('trading_commands', message);
+            dashboard.log(`${action} trade command sent`, 'warning');
+        }
+        
+        function handleConsoleInput(event) {
+            if (event.key === 'Enter') {
+                const input = event.target.value.trim();
+                if (!input) return;
+                
+                dashboard.addToConsole(`$ ${input}`);
+                
+                // Parse command
+                const parts = input.split(' ');
+                const command = parts[0];
+                const args = parts.slice(1);
+                
+                switch (command) {
+                    case 'predict':
+                        if (args.length > 0) {
+                            fetch(dashboard.services.prediction + 'trigger_prediction', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({symbol: args[0]})
+                            });
+                            dashboard.addToConsole(`Triggering prediction for ${args[0]}`);
+                        }
+                        break;
+                    
+                    case 'msg':
+                        if (args.length >= 2) {
+                            const channel = args[0];
+                            const message = args.slice(1).join(' ');
+                            dashboard.sendMessage(channel, {text: message});
+                        }
+                        break;
+                    
+                    case 'status':
+                        dashboard.addToConsole(`Services: ${Object.keys(dashboard.services).length}`);
+                        dashboard.addToConsole(`Predictions: ${dashboard.predictions.length}`);
+                        dashboard.addToConsole(`Signals: ${dashboard.signals.length}`);
+                        break;
+                    
+                    case 'clear':
+                        document.getElementById('consoleOutput').innerHTML = '';
+                        break;
+                    
+                    default:
+                        dashboard.addToConsole(`Unknown command: ${command}`);
+                        dashboard.addToConsole(`Available: predict <symbol>, msg <channel> <message>, status, clear`);
+                }
+                
+                event.target.value = '';
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            dashboard.log('🔄 Auto-refresh triggered', 'info');
+        }, 30000);
+    </script>
+</body>
+</html>
